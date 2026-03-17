@@ -2,8 +2,8 @@ class GameState:
     def __init__(self, state=(0,0,0,0)):
         self.state = state
 
-    def is_valid(self):
-        p, w, s, c = self.state
+    def is_valid(self, state):
+        p, w, s, c = state
         if w == s and p != w:
             return False
         if s == c and p != s:
@@ -13,17 +13,18 @@ class GameState:
     def is_goal(self):
         return self.state == (1,1,1,1)
 
-    def move(self, selected):
-        p, w, s, c = self.state
-        new = list(self.state)
+    def move(self, move_idx):
+        new_state = list(self.state)
 
-        # đổi phía người
-        new[0] = 1 - p
+        # người luôn đi
+        new_state[0] = 1 - new_state[0]
 
-        # chở vật
-        for item in selected:
-            idx = {"person":0,"wolf":1,"sheep":2,"cabbage":3}[item]
-            new[idx] = 1 - new[idx]
+        # vật đi cùng
+        for idx in move_idx:
+            if idx != 0:
+                new_state[idx] = 1 - new_state[idx]
 
-        new_state = GameState(tuple(new))
-        return new_state if new_state.is_valid() else None
+        if not self.is_valid(new_state):
+            return None
+
+        return GameState(tuple(new_state))
