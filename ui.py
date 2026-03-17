@@ -14,11 +14,10 @@ class GameUI:
     # ================= START =================
     def show_start(self):
         self.clear()
-
         self.canvas = tk.Canvas(self.frame)
         self.canvas.pack(fill="both", expand=True)
 
-        # load ảnh
+
         img = Image.open("assets/start.png")
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
@@ -33,7 +32,7 @@ class GameUI:
 
         self.canvas.create_rectangle(
             *self.play_btn_area,
-            outline="", fill=""  # invisible button
+            outline="", fill=""
         )
         self.canvas.bind("<Button-1>", self.on_start_click)
 
@@ -42,8 +41,6 @@ class GameUI:
         x1, y1, x2, y2 = self.play_btn_area
         if x1 <= x <= x2 and y1 <= y <= y2:
             self.show_menu()
-
-
 
     # ================= MENU =================
     def show_menu(self):
@@ -211,23 +208,30 @@ class GameUI:
         animate()
 
     def finish_move(self):
-        new_state = self.state.move(self.selected)
+        name_to_idx = {
+            "person": 0,
+            "wolf": 1,
+            "sheep": 2,
+            "cabbage": 3
+        }
 
+        move_idx = [name_to_idx[n] for n in self.selected]
+        new_state = self.state.move(move_idx)
         if not new_state:
-            messagebox.showerror("Thua", "Sai luật! Bị ăn 😭")
+            messagebox.showerror("Thua", "Sai luật! Bị ăn ")
             self.selected.clear()
             self.draw()
             return
 
         self.state = new_state
-        self.boat_side = 1 - self.boat_side
+        self.boat_side = self.state.state[0]
         self.boat_x = self.right_boat if self.boat_side else self.left_boat
 
         self.selected.clear()
         self.draw()
 
         if self.state.is_goal():
-            messagebox.showinfo("Win", "🎉 Bạn đã thắng!")
+            messagebox.showinfo("Win", " Bạn đã thắng!")
 
     # ================= AI =================
     def use_hint(self):
