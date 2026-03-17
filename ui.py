@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import messagebox
 from PIL import Image, ImageTk
 from game_logic import GameState
 from ai import bfs, hint
@@ -6,39 +7,24 @@ from ai import bfs, hint
 class GameUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("River Crossing Game")
-
         self.frame = tk.Frame(root)
         self.frame.pack(fill="both", expand=True)
-
         self.show_start()
 
-    # ================= START SCREEN =================
+    # ================= START =================
     def show_start(self):
         self.clear()
-
         tk.Label(self.frame, text="🌊 River Crossing Game", font=("Arial", 24)).pack(pady=50)
-
-        tk.Button(self.frame, text="▶ Play", width=20, command=self.show_menu).pack(pady=10)
+        tk.Button(self.frame, text="▶ Play", width=20, command=self.show_menu).pack()
 
     # ================= MENU =================
     def show_menu(self):
         self.clear()
-
-        tk.Label(self.frame, text="Chọn Level", font=("Arial", 16)).pack()
-
-        self.level = tk.IntVar(value=1)
-        for i in range(1, 6):  # demo 5 level, bạn có thể lên 15
-            tk.Radiobutton(self.frame, text=f"Level {i}", variable=self.level, value=i).pack()
-
         tk.Label(self.frame, text="Chọn thuật toán", font=("Arial", 16)).pack(pady=10)
-
         self.algo = tk.StringVar(value="BFS")
-        tk.Radiobutton(self.frame, text="BFS", variable=self.algo, value="BFS").pack()
-        tk.Radiobutton(self.frame, text="DFS", variable=self.algo, value="DFS").pack()
-        tk.Radiobutton(self.frame, text="A*", variable=self.algo, value="A*").pack()
-
-        tk.Button(self.frame, text="▶ Start Game", command=self.start_game).pack(pady=20)
+        for algo in ["BFS", "DFS", "A*"]:
+            tk.Radiobutton(self.frame, text=algo, variable=self.algo, value=algo).pack()
+        tk.Button(self.frame, text="▶ Start", command=self.start_game).pack(pady=20)
 
     # ================= GAME =================
     def start_game(self):
@@ -51,126 +37,119 @@ class GameUI:
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
 
-        # 🚀 chia layout: game + control
-        game_frame = tk.Frame(self.frame)
-        game_frame.pack(fill="both", expand=True)
+        # vị trí thuyền
+        self.left_boat = int(screen_w * 0.35)
+        self.right_boat = int(screen_w * 0.65)
+        self.boat_x = self.left_boat
 
-        control_frame = tk.Frame(self.frame, height=80, bg="lightgray")
-        control_frame.pack(fill="x")
+        # ===== layout 2 cột =====
+        main = tk.Frame(self.frame)
+        main.pack(fill="both", expand=True)
 
-        # 🎮 canvas (KHÔNG full toàn màn nữa)
-        self.canvas = tk.Canvas(
-            game_frame,
-            width=screen_w,
-            height=screen_h - 80  # chừa chỗ cho nút
-        )
+        game_frame = tk.Frame(main)
+        game_frame.pack(side="left", fill="both", expand=True)
+
+        control = tk.Frame(main, width=260, bg="#eeeeee")
+        control.pack(side="right", fill="y")
+
+        # canvas
+        self.canvas = tk.Canvas(game_frame)
         self.canvas.pack(fill="both", expand=True)
-
         self.canvas.bind("<Button-1>", self.on_click)
 
-        # 🚤 vị trí thuyền
-        self.boat_x = int(screen_w * 0.35)
+        # panel phải
+        tk.Label(control, text="🎮 Điều khiển", font=("Arial", 16), bg="#eeeeee").pack(pady=10)
 
-        # 🎛️ nút điều khiển
-        tk.Button(control_frame, text="🚤 Chở", command=self.move_boat) \
-            .pack(side="left", padx=10, pady=10)
+        tk.Button(control, text="🚤 Chở", width=15, command=self.move_boat).pack(pady=5)
+        tk.Button(control, text="💡 Hint", width=15, command=self.use_hint).pack(pady=5)
+        tk.Button(control, text="🤖 Solve", width=15, command=self.solve).pack(pady=5)
+        tk.Button(control, text="🔄 Reset", width=15, command=self.start_game).pack(pady=5)
+        tk.Button(control, text="🏠 Menu", width=15, command=self.show_start).pack(pady=20)
 
-        tk.Button(control_frame, text="💡 Hint", command=self.use_hint) \
-            .pack(side="left", padx=10)
-
-        tk.Button(control_frame, text="🤖 AI Solve", command=self.solve) \
-            .pack(side="left", padx=10)
-
-        tk.Button(control_frame, text="🔄 Reset", command=self.start_game) \
-            .pack(side="left", padx=10)
-
-        tk.Button(control_frame, text="🏠 Menu", command=self.show_start) \
-            .pack(side="right", padx=10)
+        self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
+        self.info_label.pack(pady=20)
 
         self.load_images()
         self.draw()
 
     # ================= LOAD IMAGE =================
     def load_images(self):
-        # lấy kích thước màn hình
-        screen_w = self.root.winfo_screenwidth()
-        screen_h = self.root.winfo_screenheight()
-
-        def load(path, size=None):
+        def load(path, size):
             img = Image.open("assets/" + path)
-            if size:
-                img = img.resize(size, Image.LANCZOS)
+            img = img.resize(size)
             return ImageTk.PhotoImage(img)
 
         self.images = {
-            # background full màn hình
-            "bg": load("bg.png", (screen_w, screen_h)),
-
-            # object nhỏ lại cho đẹp
-            "person": load("person.png", (130, 130)),
-            "wolf": load("wolf.png", (130, 130)),
-            "sheep": load("sheep.png", (130, 130)),
-            "cabbage": load("cabbage.png", (130, 130)),
-
-            # thuyền to hơn
-            "boat": load("boat.png", (250, 200))
+            "bg": load("bg.png", (1200, 700)),
+            "boat": load("boat.png", (250, 150)),
+            "person": load("person.png", (100, 100)),
+            "wolf": load("wolf.png", (100, 100)),
+            "sheep": load("sheep.png", (100, 100)),
+            "cabbage": load("cabbage.png", (100, 100)),
         }
-
 
     # ================= DRAW =================
     def draw(self):
         self.canvas.delete("all")
 
-        screen_w = self.root.winfo_screenwidth()
-        LEFT_X = int(screen_w * 0.2)
-        RIGHT_X = int(screen_w * 0.8)
-        BOAT_Y = int(self.root.winfo_screenheight() * 0.65)
+        self.canvas.create_image(600, 350, image=self.images["bg"])
+        self.canvas.create_image(self.boat_x, 420, image=self.images["boat"])
 
-        screen_h = self.root.winfo_screenheight()
-
-        self.canvas.create_image(screen_w // 2, screen_h // 2, image=self.images["bg"])
-
-        BOAT_Y = 400
-        self.canvas.create_image(self.boat_x, BOAT_Y, image=self.images["boat"])
-
-        LEFT_X = 150
-        RIGHT_X = 750
-
-        positions = {
-            "person": 100,
-            "wolf": 200,
-            "sheep": 300,
-            "cabbage": 400
+        LEFT_POS = {
+            "person": (150, 120),
+            "wolf": (150, 250),
+            "sheep": (150, 380),
+            "cabbage": (150, 510)
         }
 
-        for name,y in positions.items():
+        RIGHT_POS = {
+            "person": (900, 120),
+            "wolf": (900, 250),
+            "sheep": (900, 380),
+            "cabbage": (900, 510)
+        }
+
+        for name in ["person","wolf","sheep","cabbage"]:
             idx = {"person":0,"wolf":1,"sheep":2,"cabbage":3}[name]
             side = self.state.state[idx]
 
             if name in self.selected:
-                index = self.selected.index(name)
-                spacing = 70
-                start_x = self.boat_x - spacing // 2
-                x = start_x + index * spacing
+                i = self.selected.index(name)
+                slots = [
+                    (self.boat_x - 40, 380),
+                    (self.boat_x + 40, 380)
+                ]
+                x, y = slots[i]
             else:
-                x = LEFT_X if side == 0 else RIGHT_X
+                x, y = LEFT_POS[name] if side == 0 else RIGHT_POS[name]
 
-            self.canvas.create_image(x,y,image=self.images[name],tags=name)
+            self.canvas.create_image(x, y, image=self.images[name], tags=name)
+
+            if side != self.boat_side:
+                self.canvas.create_rectangle(x-40,y-40,x+40,y+40,outline="gray")
 
             if name in self.selected:
-                self.canvas.create_rectangle(x-30,y-30,x+30,y+30,outline="red",width=2)
+                self.canvas.create_rectangle(x-40,y-40,x+40,y+40,outline="red", width=2)
 
+        # info
+        self.info_label.config(
+            text=f"Trạng thái:\n"
+                 f"👨 Người: {'Phải' if self.state.state[0] else 'Trái'}\n"
+                 f"🐺 Sói: {'Phải' if self.state.state[1] else 'Trái'}\n"
+                 f"🐑 Cừu: {'Phải' if self.state.state[2] else 'Trái'}\n"
+                 f"🥬 Bắp: {'Phải' if self.state.state[3] else 'Trái'}"
+        )
 
-    def on_click(self,event):
-        item = self.canvas.find_closest(event.x,event.y)
+    # ================= CLICK =================
+    def on_click(self, event):
+        item = self.canvas.find_closest(event.x, event.y)
         tags = self.canvas.gettags(item)
-
         if not tags:
             return
 
         name = tags[0]
-
         idx = {"person":0,"wolf":1,"sheep":2,"cabbage":3}[name]
+
         if self.state.state[idx] != self.boat_side:
             return
 
@@ -183,41 +162,44 @@ class GameUI:
 
         self.draw()
 
+    # ================= MOVE =================
     def move_boat(self):
-        screen_w = self.root.winfo_screenwidth()
-        left_boat = int(screen_w * 0.35)
-        right_boat = int(screen_w * 0.65)
-
-        target = right_boat if self.boat_side == 0 else left_boat
-
         if "person" not in self.selected:
+            messagebox.showwarning("Lỗi", "Phải có người lái thuyền!")
             return
 
-        target = 600 if self.boat_side == 0 else 300
-        step = 5 if target > self.boat_x else -5
+        target = self.right_boat if self.boat_side == 0 else self.left_boat
+        step = 10 if target > self.boat_x else -10
 
         def animate():
-            if (step>0 and self.boat_x<target) or (step<0 and self.boat_x>target):
+            if (step > 0 and self.boat_x < target) or (step < 0 and self.boat_x > target):
                 self.boat_x += step
                 self.draw()
-                self.root.after(20,animate)
+                self.root.after(20, animate)
             else:
+                self.boat_x = target
                 self.finish_move()
 
         animate()
 
     def finish_move(self):
         new_state = self.state.move(self.selected)
+
         if not new_state:
+            messagebox.showerror("Thua", "Sai luật! Bị ăn 😭")
             self.selected.clear()
             self.draw()
             return
 
         self.state = new_state
         self.boat_side = 1 - self.boat_side
-        self.selected.clear()
+        self.boat_x = self.right_boat if self.boat_side else self.left_boat
 
+        self.selected.clear()
         self.draw()
+
+        if self.state.is_goal():
+            messagebox.showinfo("Win", "🎉 Bạn đã thắng!")
 
     # ================= AI =================
     def use_hint(self):
@@ -236,9 +218,9 @@ class GameUI:
             return
         self.state = sol[i]
         self.draw()
-        self.root.after(700, lambda: self.animate_solution(sol,i+1))
+        self.root.after(600, lambda: self.animate_solution(sol, i+1))
 
-    # ================= UTILITY =================
+    # ================= UTIL =================
     def clear(self):
-        for widget in self.frame.winfo_children():
-            widget.destroy()
+        for w in self.frame.winfo_children():
+            w.destroy()
