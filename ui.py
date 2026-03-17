@@ -14,8 +14,36 @@ class GameUI:
     # ================= START =================
     def show_start(self):
         self.clear()
-        tk.Label(self.frame, text="🌊 River Crossing Game", font=("Arial", 24)).pack(pady=50)
-        tk.Button(self.frame, text="▶ Play", width=20, command=self.show_menu).pack()
+
+        self.canvas = tk.Canvas(self.frame)
+        self.canvas.pack(fill="both", expand=True)
+
+        # load ảnh
+        img = Image.open("assets/start.png")
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+
+        img = img.resize((screen_w, screen_h))
+        self.start_img = ImageTk.PhotoImage(img)
+
+        self.canvas.create_image(0, 0, anchor="nw", image=self.start_img)
+
+
+        self.play_btn_area = (410, 655, 664, 703)
+
+        self.canvas.create_rectangle(
+            *self.play_btn_area,
+            outline="", fill=""  # invisible button
+        )
+        self.canvas.bind("<Button-1>", self.on_start_click)
+
+    def on_start_click(self, event):
+        x, y = event.x, event.y
+        x1, y1, x2, y2 = self.play_btn_area
+        if x1 <= x <= x2 and y1 <= y <= y2:
+            self.show_menu()
+
+
 
     # ================= MENU =================
     def show_menu(self):
