@@ -61,7 +61,25 @@ class GameUI:
             tk.Radiobutton(self.frame, text=lv, variable=self.level, value=lv).pack(pady=5)
         tk.Button(self.frame, text="▶ Bắt đầu", command=self.start_game).pack(pady=20)
 
+
+
+
     # ================= GAME =================
+    def make_button(self, parent, text, fg, bg, abg, command):
+        return tk.Button(
+            parent,
+            text=text,
+            font=("Arial", 14, "bold"),
+            fg=fg,
+            bg=bg,
+            activebackground=abg,
+            activeforeground=fg,
+            relief="raised",
+            bd=3,
+            padx=10, pady=5,
+            command=command
+        )
+
     def start_game(self):
         self.clear()
         self.state = GameState()
@@ -73,7 +91,6 @@ class GameUI:
         self.start_time = time.time()  # lưu thời điểm bắt đầu
 
         screen_w = self.root.winfo_screenwidth()
-        screen_h = self.root.winfo_screenheight()
 
         # vị trí thuyền
         self.left_boat = int(screen_w * 0.35)
@@ -98,16 +115,13 @@ class GameUI:
         # panel phải
         tk.Label(control, text="🎮 Điều khiển", font=("Arial", 16), bg="#eeeeee").pack(pady=10)
 
-        tk.Button(control, text="🚤 Chở", width=15, command=self.move_boat).pack(pady=5)
-        tk.Button(control, text="💡 Hint", width=15, command=self.use_hint).pack(pady=5)
-        # Trong start_game, thay vì nút Solve:
-        tk.Button(control, text="🤖 BFS", width=15, command=self.solve_bfs).pack(pady=5)
-        tk.Button(control, text="🤖 DFS", width=15, command=self.solve_dfs).pack(pady=5)
-        tk.Button(control, text="🤖 A*", width=15, command=self.solve_astar).pack(pady=5)
-
-        tk.Button(control, text="🔄 Reset", width=15, command=self.start_game).pack(pady=5)
-        tk.Button(control, text="🏠 Menu", width=15, command=self.show_start).pack(pady=20)
-
+        self.make_button(control, "🚤 Chở", "black", "#f0e68c", "#e6d96c", self.move_boat).pack(pady=5)
+        self.make_button(control, "💡 Hint", "darkorange", "#ffe4b5", "#ffdead", self.use_hint).pack(pady=5)
+        self.make_button(control, "🤖 BFS", "darkblue", "#add8e6", "#87ceeb", self.solve_bfs).pack(pady=5)
+        self.make_button(control, "🤖 DFS", "darkred", "#f08080", "#cd5c5c", self.solve_dfs).pack(pady=5)
+        self.make_button(control, "🤖 A*", "darkgreen", "#90ee90", "#66cdaa", self.solve_astar).pack(pady=5)
+        self.make_button(control, "🔄 Reset", "purple", "#dda0dd", "#ba55d3", self.start_game).pack(pady=5)
+        self.make_button(control, "🏠 Menu", "brown", "#f5deb3", "#e6c68a", self.show_start).pack(pady=20)
         self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
         self.info_label.pack(pady=20)
 
@@ -338,7 +352,8 @@ class GameUI:
         for idx in range(4):
             if prev[idx] != curr[idx]:
                 moved.append(idx_to_name[idx])
-
+        if "person" not in moved:
+            moved.append("person")
         # gán selected để move_boat biết ai đang trên thuyền
         self.selected = moved
 

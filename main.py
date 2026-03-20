@@ -3,7 +3,8 @@ from ui import GameUI
 
 root = tk.Tk()
 root.title("River Crossing Game")
-root.state("zoomed")
+
+root.state("zoomed")  
 
 GameUI(root)
 
