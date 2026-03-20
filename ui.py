@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from game_logic import GameState
-from ai import bfs, hint
+from ai import bfs, hint, dfs, astar
 
 class GameUI:
     def __init__(self, root):
@@ -239,19 +239,37 @@ class GameUI:
         if h:
             self.state = h
             self.draw()
-
+    #HÀM SOLVE
     def solve(self):
-        sol = bfs(self.state)
+        algo_type = self.algo.get() 
+        sol = None
+        # 2. Kiểm tra và gọi đúng hàm AI tương ứng
+        if algo_type == "BFS":
+            sol = bfs(self.state)
+        elif algo_type == "DFS":
+            sol = dfs(self.state) # Phải gọi đúng tên hàm Duy viết trong ai.py
+        elif algo_type == "A*":
+            sol = astar(self.state)
+        
+        # 3. Nếu tìm thấy lời giải thì chạy hiệu ứng di chuyển
         if sol:
             self.animate_solution(sol)
-
+        else:
+            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi!")
     def animate_solution(self, sol, i=0):
+        # Nếu đã đi hết danh sách các bước thì dừng lại
         if i >= len(sol):
             return
+            
+        # Cập nhật trạng thái game sang bước tiếp theo trong danh sách
         self.state = sol[i]
+        
+        # Vẽ lại màn hình để người dùng thấy nhân vật đã sang sông
         self.draw()
-        self.root.after(600, lambda: self.animate_solution(sol, i+1))
-
+        
+        # Đợi 700ms (0.7 giây) rồi tự động gọi lại chính nó để diễn tập bước tiếp theo
+        # Đây gọi là đệ quy để tạo hiệu ứng chuyển động
+        self.root.after(700, lambda: self.animate_solution(sol, i+1))
     # ================= UTIL =================
     def clear(self):
         for w in self.frame.winfo_children():
