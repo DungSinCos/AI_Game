@@ -1,4 +1,5 @@
 import tkinter as tk
+import time
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from game_logic import GameState
@@ -11,53 +12,65 @@ class GameUI:
         self.frame.pack(fill="both", expand=True)
         self.show_start()
 
-    # ================= START =================
+
     def show_start(self):
         self.clear()
-        self.canvas = tk.Canvas(self.frame)
+        self.canvas = tk.Canvas(self.frame, bg="white")
         self.canvas.pack(fill="both", expand=True)
 
-
-        img = Image.open("assets/start.png")
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
 
-        img = img.resize((screen_w, screen_h))
-        self.start_img = ImageTk.PhotoImage(img)
-
+        # ảnh nền
+        bg = Image.open("assets/start.png")
+        bg = bg.resize((screen_w, screen_h))
+        self.start_img = ImageTk.PhotoImage(bg)
         self.canvas.create_image(0, 0, anchor="nw", image=self.start_img)
 
-
-        self.play_btn_area = (410, 655, 664, 703)
-
-        self.canvas.create_rectangle(
-            *self.play_btn_area,
-            outline="", fill=""
+        # tạo nút bằng code (khối màu + chữ)
+        play_btn = tk.Button(
+            self.canvas,
+            text="▶ CHƠI NGAY",
+            font=("Arial", 18, "bold"),
+            fg="darkgreen",
+            bg="#f5deb3",  # màu be
+            activebackground="#e6c68a",  # màu khi hover
+            activeforeground="darkgreen",
+            relief="raised",
+            bd=3,
+            padx=20, pady=10,
+            command=self.show_level_menu
         )
-        self.canvas.bind("<Button-1>", self.on_start_click)
+
+        # đặt nút vào giữa dưới màn hình
+        self.canvas.create_window(screen_w // 2, screen_h - 120, window=play_btn)
 
     def on_start_click(self, event):
         x, y = event.x, event.y
         x1, y1, x2, y2 = self.play_btn_area
         if x1 <= x <= x2 and y1 <= y <= y2:
-            self.show_menu()
+            self.show_level_menu()
 
     # ================= MENU =================
-    def show_menu(self):
+    def show_level_menu(self):
         self.clear()
-        tk.Label(self.frame, text="Chọn thuật toán", font=("Arial", 16)).pack(pady=10)
-        self.algo = tk.StringVar(value="BFS")
-        for algo in ["BFS", "DFS", "A*"]:
-            tk.Radiobutton(self.frame, text=algo, variable=self.algo, value=algo).pack()
-        tk.Button(self.frame, text="▶ Start", command=self.start_game).pack(pady=20)
+        tk.Label(self.frame, text="Chọn Level", font=("Arial", 18)).pack(pady=20)
+
+        self.level = tk.StringVar(value="Dễ")
+        for lv in ["Dễ", "Trung bình", "Khó"]:
+            tk.Radiobutton(self.frame, text=lv, variable=self.level, value=lv).pack(pady=5)
+        tk.Button(self.frame, text="▶ Bắt đầu", command=self.start_game).pack(pady=20)
 
     # ================= GAME =================
     def start_game(self):
         self.clear()
-
         self.state = GameState()
         self.selected = []
         self.boat_side = 0
+
+        # reset bước đi và thời gian
+        self.steps = 0
+        self.start_time = time.time()  # lưu thời điểm bắt đầu
 
         screen_w = self.root.winfo_screenwidth()
         screen_h = self.root.winfo_screenheight()
@@ -87,15 +100,61 @@ class GameUI:
 
         tk.Button(control, text="🚤 Chở", width=15, command=self.move_boat).pack(pady=5)
         tk.Button(control, text="💡 Hint", width=15, command=self.use_hint).pack(pady=5)
-        tk.Button(control, text="🤖 Solve", width=15, command=self.solve).pack(pady=5)
+        # Trong start_game, thay vì nút Solve:
+        tk.Button(control, text="🤖 BFS", width=15, command=self.solve_bfs).pack(pady=5)
+        tk.Button(control, text="🤖 DFS", width=15, command=self.solve_dfs).pack(pady=5)
+        tk.Button(control, text="🤖 A*", width=15, command=self.solve_astar).pack(pady=5)
+
         tk.Button(control, text="🔄 Reset", width=15, command=self.start_game).pack(pady=5)
         tk.Button(control, text="🏠 Menu", width=15, command=self.show_start).pack(pady=20)
 
         self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
         self.info_label.pack(pady=20)
 
+        # thêm label hiển thị thời gian và bước đi
+        self.status_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
+        self.status_label.pack(pady=10)
+
         self.load_images()
         self.draw()
+
+        # bắt đầu đếm thời gian
+        self.update_timer()
+
+    def solve_bfs(self):
+        sol = bfs(self.state)
+        if sol:
+            self.animate_solution(sol)
+        else:
+            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với BFS!")
+
+    def solve_dfs(self):
+        sol = dfs(self.state)
+        if sol:
+            self.animate_solution(sol)
+        else:
+            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với DFS!")
+
+    def solve_astar(self):
+        sol = astar(self.state)
+        if sol:
+            self.animate_solution(sol)
+        else:
+            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với A*!")
+
+    # ================= TIMER & STATUS =================
+    def update_timer(self):
+        # tính số giây đã trôi qua
+        elapsed = int(time.time() - self.start_time)
+        self.time_elapsed = elapsed
+        self.update_status()
+        self.root.after(1000, self.update_timer)
+
+    def update_status(self):
+        self.status_label.config(
+            text=f"⏱ Thời gian: {self.time_elapsed} giây\n"
+                 f"🚶 Bước đi: {self.steps}"
+        )
 
     # ================= LOAD IMAGE =================
     def load_images(self):
@@ -120,18 +179,19 @@ class GameUI:
         self.canvas.create_image(600, 350, image=self.images["bg"])
         self.canvas.create_image(self.boat_x, 420, image=self.images["boat"])
 
+        screen_w = self.root.winfo_screenwidth()
         LEFT_POS = {
-            "person": (150, 120),
-            "wolf": (150, 250),
-            "sheep": (150, 380),
-            "cabbage": (150, 510)
+            "person": (int(screen_w * 0.08), 120),
+            "wolf": (int(screen_w * 0.08), 250),
+            "sheep": (int(screen_w * 0.08), 380),
+            "cabbage": (int(screen_w * 0.08), 510)
         }
 
         RIGHT_POS = {
-            "person": (900, 120),
-            "wolf": (900, 250),
-            "sheep": (900, 380),
-            "cabbage": (900, 510)
+            "person": (int(screen_w * 0.8), 120),
+            "wolf": (int(screen_w * 0.8), 250),
+            "sheep": (int(screen_w * 0.8), 380),
+            "cabbage": (int(screen_w * 0.8), 510)
         }
 
         for name in ["person","wolf","sheep","cabbage"]:
@@ -188,7 +248,7 @@ class GameUI:
         self.draw()
 
     # ================= MOVE =================
-    def move_boat(self):
+    def move_boat(self, callback=None):
         if "person" not in self.selected:
             messagebox.showwarning("Lỗi", "Phải có người lái thuyền!")
             return
@@ -204,6 +264,8 @@ class GameUI:
             else:
                 self.boat_x = target
                 self.finish_move()
+                if callback:
+                    callback()
 
         animate()
 
@@ -220,7 +282,7 @@ class GameUI:
         if not new_state:
             messagebox.showerror("Thua", "Sai luật! Bị ăn ")
             self.selected.clear()
-            self.draw()
+            self.start_game()
             return
 
         self.state = new_state
@@ -230,8 +292,12 @@ class GameUI:
         self.selected.clear()
         self.draw()
 
+        # tăng số bước đi
+        self.steps += 1
+        self.update_status()
+
         if self.state.is_goal():
-            messagebox.showinfo("Win", " Bạn đã thắng!")
+            messagebox.showinfo("Win", "Bạn đã thắng!")
 
     # ================= AI =================
     def use_hint(self):
@@ -256,20 +322,33 @@ class GameUI:
             self.animate_solution(sol)
         else:
             messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi!")
-    def animate_solution(self, sol, i=0):
-        # Nếu đã đi hết danh sách các bước thì dừng lại
+
+    def animate_solution(self, sol, i=1):
+        # i=1 vì sol[0] là trạng thái ban đầu
         if i >= len(sol):
             return
-            
-        # Cập nhật trạng thái game sang bước tiếp theo trong danh sách
-        self.state = sol[i]
-        
-        # Vẽ lại màn hình để người dùng thấy nhân vật đã sang sông
-        self.draw()
-        
-        # Đợi 700ms (0.7 giây) rồi tự động gọi lại chính nó để diễn tập bước tiếp theo
-        # Đây gọi là đệ quy để tạo hiệu ứng chuyển động
-        self.root.after(700, lambda: self.animate_solution(sol, i+1))
+
+        # tìm nhân vật nào thay đổi vị trí giữa sol[i-1] và sol[i]
+        prev = sol[i - 1].state
+        curr = sol[i].state
+        name_to_idx = {"person": 0, "wolf": 1, "sheep": 2, "cabbage": 3}
+        idx_to_name = {v: k for k, v in name_to_idx.items()}
+
+        moved = []
+        for idx in range(4):
+            if prev[idx] != curr[idx]:
+                moved.append(idx_to_name[idx])
+
+        # gán selected để move_boat biết ai đang trên thuyền
+        self.selected = moved
+
+        # sau khi thuyền chạy xong thì gọi tiếp animate_solution cho bước kế
+        def after_move():
+            self.animate_solution(sol, i + 1)
+
+        # sửa move_boat để nhận callback khi xong
+        self.move_boat(callback=after_move)
+
     # ================= UTIL =================
     def clear(self):
         for w in self.frame.winfo_children():
