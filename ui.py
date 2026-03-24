@@ -142,13 +142,13 @@ class GameUI:
 
         tk.Label(control, text="🎮 Điều khiển", font=("Arial", 16), bg="#eeeeee").pack(pady=10)
 
-        self.make_button(control, "🚤 Chở", "black", "#f0e68c", "#e6d96c", self.move_boat).pack(pady=5)
-        self.make_button(control, "💡 Hint", "darkorange", "#ffe4b5", "#ffdead", self.use_hint).pack(pady=5)
-        self.make_button(control, "🤖 BFS", "darkblue", "#add8e6", "#87ceeb", self.solve_bfs).pack(pady=5)
-        self.make_button(control, "🤖 DFS", "darkred", "#f08080", "#cd5c5c", self.solve_dfs).pack(pady=5)
-        self.make_button(control, "🤖 A*", "darkgreen", "#90ee90", "#66cdaa", self.solve_astar).pack(pady=5)
-        self.make_button(control, "🔄 Reset", "purple", "#dda0dd", "#ba55d3", self.start_game).pack(pady=5)
-        self.make_button(control, "🏠 Menu", "brown", "#f5deb3", "#e6c68a", self.show_start).pack(pady=20)
+        self.make_button(control, "Chở", "black", "#f0e68c", "#e6d96c", self.move_boat).pack(pady=5)
+        self.make_button(control, "Hint", "darkorange", "#ffe4b5", "#ffdead", self.use_hint).pack(pady=5)
+        self.make_button(control, "BFS", "darkblue", "#add8e6", "#87ceeb", self.solve_bfs).pack(pady=5)
+        self.make_button(control, "DFS", "darkred", "#f08080", "#cd5c5c", self.solve_dfs).pack(pady=5)
+        self.make_button(control, "A*", "darkgreen", "#90ee90", "#66cdaa", self.solve_astar).pack(pady=5)
+        self.make_button(control, "Reset", "purple", "#dda0dd", "#ba55d3", self.start_game).pack(pady=5)
+        self.make_button(control, "Menu", "brown", "#f5deb3", "#e6c68a", self.show_start).pack(pady=20)
 
         self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
         self.info_label.pack(pady=20)
@@ -273,7 +273,7 @@ class GameUI:
         self.steps += 1
         self.update_status()
         if self.state.is_goal():
-            messagebox.showinfo("Win", f"Bạn đã thắng Level {self.state.level}!")
+            messagebox.showinfo("Win", f"Bạn đã thắng Level {self.state.level}!\n{self.state.description}")
 
     # ================= AI =================
     def use_hint(self):

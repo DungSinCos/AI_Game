@@ -1,6 +1,8 @@
 class GameState:
-    def __init__(self, state=(0,0,0,0)):
+    def __init__(self, state=(0,0,0,0), level=1, description=""):
         self.state = state
+        self.level = level
+        self.description = description
 
     def is_valid(self, state):
         p, w, s, c = state
@@ -15,16 +17,12 @@ class GameState:
 
     def move(self, move_idx):
         new_state = list(self.state)
-
         # người luôn đi
         new_state[0] = 1 - new_state[0]
-
         # vật đi cùng
         for idx in move_idx:
             if idx != 0:
                 new_state[idx] = 1 - new_state[idx]
-
         if not self.is_valid(new_state):
             return None
-
-        return GameState(tuple(new_state))
+        return GameState(tuple(new_state), self.level, self.description)
