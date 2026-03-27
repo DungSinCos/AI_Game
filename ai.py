@@ -65,13 +65,59 @@ def heuristic(state):
     """Ước lượng: Càng nhiều vật bên bờ trái (0), giá trị càng cao"""
     return sum(1 for x in state.state if x == 0)
 
-def astar(start):
-    # pq lưu: (f_score, g_score, state, path)
-    pq = [(heuristic(start), 0, start, [])]
-    visited = {} 
+# --- 6. THUẬT TOÁN UCS (Uniform Cost Search) ---
+def ucs(start):
+    count = 0
+    # (cost, count, state, path)
+    pq = [(0, count, start, [])]
+    visited = {}
 
     while pq:
-        f, g, state, path = heapq.heappop(pq)
+        g, _, state, path = heapq.heappop(pq)
+
+        if state.state in visited and visited[state.state] <= g:
+            continue
+        visited[state.state] = g
+
+        if state.is_goal():
+            return path + [state]
+
+        for next_state in generate_moves(state):
+            count += 1
+            heapq.heappush(pq, (g + 1, count, next_state, path + [state]))
+    return None
+
+# --- 7. THUẬT TOÁN GREEDY BEST-FIRST SEARCH ---
+def greedy(start):
+    count = 0
+    # (h, count, state, path)
+    pq = [(heuristic(start), count, start, [])]
+    visited = set()
+
+    while pq:
+        h, _, state, path = heapq.heappop(pq)
+
+        if state.state in visited:
+            continue
+        visited.add(state.state)
+
+        if state.is_goal():
+            return path + [state]
+
+        for next_state in generate_moves(state):
+            count += 1
+            heapq.heappush(pq, (heuristic(next_state), count, next_state, path + [state]))
+    return None
+
+# --- 8. THUẬT TOÁN A* (Duy đã có, đây là bản tối ưu hơn) ---
+def astar(start):
+    count = 0
+    # (f, count, g, state, path)
+    pq = [(heuristic(start), count, 0, start, [])]
+    visited = {}
+
+    while pq:
+        f, _, g, state, path = heapq.heappop(pq)
 
         if state.state in visited and visited[state.state] <= g:
             continue
@@ -83,7 +129,8 @@ def astar(start):
         for next_state in generate_moves(state):
             new_g = g + 1
             new_f = new_g + heuristic(next_state)
-            heapq.heappush(pq, (new_f, new_g, next_state, path + [state]))
+            count += 1
+            heapq.heappush(pq, (new_f, count, new_g, next_state, path + [state]))
     return None
 
 # --- 5. GỢI Ý (Hint) ---
