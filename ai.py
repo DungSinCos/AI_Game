@@ -1,28 +1,61 @@
+# ai.py
 from collections import deque
 import heapq
 from game_logic import GameState
 
-# --- 1. HÀM HỖ TRỢ (Dùng chung cho các thuật toán) ---
+
 def generate_moves(state):
-    # Mapping từ tên sang chỉ số (index) tương ứng trong trạng thái (0,0,0,0)
-    name_to_idx = {"person": 0, "wolf": 1, "sheep": 2, "cabbage": 3}
-    names = ["person", "wolf", "sheep", "cabbage"]
+    """Tạo các nước đi khả thi từ trạng thái hiện tại"""
     moves = []
+    characters = state.characters
 
-    for item in names:
-        # Tạo danh sách chứa chỉ số (số nguyên), không phải chứa chữ (string)
-        selected_indices = [name_to_idx["person"]] 
-        if item != "person":
-            selected_indices.append(name_to_idx[item])
+    # Person luôn đi
+    person_idx = 0
 
-        # Truyền danh sách số vào hàm move của Hoa
-        new_state = state.move(selected_indices)
-        if new_state:
-            moves.append(new_state)
+    # Các tổ hợp vật có thể chở (1 hoặc nhiều tùy boat_capacity)
+    # Với mỗi vật có thể chọn hoặc không
+    other_indices = list(range(1, len(characters)))
+
+    # Tạo tất cả tổ hợp vật (subset) với kích thước từ 1 đến boat_capacity-1
+    for r in range(1, state.boat_capacity):
+        from itertools import combinations
+        for combo in combinations(other_indices, r):
+            move_indices = [person_idx] + list(combo)
+            # Kiểm tra vật được chọn phải cùng bờ với người
+            valid = True
+            for idx in move_indices:
+                if state.state[idx] != state.state[person_idx]:
+                    valid = False
+                    break
+            if valid:
+                new_state = state.move(move_indices)
+                if new_state:
+                    moves.append(new_state)
+
+    # Trường hợp chỉ chở mình người
+    move_indices = [person_idx]
+    new_state = state.move(move_indices)
+    if new_state:
+        moves.append(new_state)
 
     return moves
 
-# --- 2. THUẬT TOÁN BFS (Tìm đường ngắn nhất) ---
+
+def heuristic(state):
+    """Heuristic: số lượng vật còn ở bờ trái"""
+    if state.level == 5:
+        # Level 5: ưu tiên vật có thời gian lớn
+        tiger_times = state.level_data.get("tiger_times", {})
+        total_time = 0
+        for i, pos in enumerate(state.state):
+            if i > 0 and pos == 0:  # vật ở bờ trái
+                item_name = state.characters[i]
+                total_time += tiger_times.get(item_name, 1)
+        return total_time
+    else:
+        return sum(1 for x in state.state if x == 0)
+
+
 def bfs(start):
     queue = deque([(start, [])])
     visited = set()
@@ -41,13 +74,13 @@ def bfs(start):
             queue.append((next_state, path + [state]))
     return None
 
-# --- 3. THUẬT TOÁN DFS (Tìm đường bất kỳ) ---
+
 def dfs(start):
     stack = [(start, [])]
     visited = set()
 
     while stack:
-        state, path = stack.pop() # LIFO - Lấy cuối cùng
+        state, path = stack.pop()
 
         if state.state in visited:
             continue
@@ -60,37 +93,30 @@ def dfs(start):
             stack.append((next_state, path + [state]))
     return None
 
-# --- 4. THUẬT TOÁN A* (Tìm kiếm tối ưu với Heuristic) ---
-def heuristic(state):
-    """Ước lượng: Càng nhiều vật bên bờ trái (0), giá trị càng cao"""
-    return sum(1 for x in state.state if x == 0)
 
-# --- 6. THUẬT TOÁN UCS (Uniform Cost Search) ---
 def ucs(start):
     count = 0
-    # (cost, count, state, path)
     pq = [(0, count, start, [])]
     visited = {}
 
     while pq:
-        g, _, state, path = heapq.heappop(pq)
+        cost, _, state, path = heapq.heappop(pq)
 
-        if state.state in visited and visited[state.state] <= g:
+        if state.state in visited and visited[state.state] <= cost:
             continue
-        visited[state.state] = g
+        visited[state.state] = cost
 
         if state.is_goal():
             return path + [state]
 
         for next_state in generate_moves(state):
             count += 1
-            heapq.heappush(pq, (g + 1, count, next_state, path + [state]))
+            heapq.heappush(pq, (next_state.cost, count, next_state, path + [state]))
     return None
 
-# --- 7. THUẬT TOÁN GREEDY BEST-FIRST SEARCH ---
+
 def greedy(start):
     count = 0
-    # (h, count, state, path)
     pq = [(heuristic(start), count, start, [])]
     visited = set()
 
@@ -109,10 +135,9 @@ def greedy(start):
             heapq.heappush(pq, (heuristic(next_state), count, next_state, path + [state]))
     return None
 
-# --- 8. THUẬT TOÁN A* (Duy đã có, đây là bản tối ưu hơn) ---
+
 def astar(start):
     count = 0
-    # (f, count, g, state, path)
     pq = [(heuristic(start), count, 0, start, [])]
     visited = {}
 
@@ -127,15 +152,15 @@ def astar(start):
             return path + [state]
 
         for next_state in generate_moves(state):
-            new_g = g + 1
+            new_g = next_state.cost
             new_f = new_g + heuristic(next_state)
             count += 1
             heapq.heappush(pq, (new_f, count, new_g, next_state, path + [state]))
     return None
 
-# --- 5. GỢI Ý (Hint) ---
+
 def hint(state):
-    """Dùng BFS để gợi ý bước đi tiếp theo tối ưu nhất"""
+    """Gợi ý nước đi tiếp theo"""
     sol = bfs(state)
     if sol and len(sol) > 1:
         return sol[1]
