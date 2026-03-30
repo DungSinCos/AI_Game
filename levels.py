@@ -79,7 +79,87 @@ levels = {
             "tiger4": "🐯 Hổ chậm (8s)",
             "tiger5": "🐯 Hổ rất chậm (12s)"
         }
+    },
+    6: {
+        "name": "Bom, Hổ và Nhà khoa học",
+        "description": "Đưa Nhà khoa học, Người, Robot, Hổ và 2 Bom qua sông. Hai bom không được ở cùng nhau nếu không có nhà khoa học. Robot chỉ mang bom khi có người. Hổ không được ở riêng với người hoặc nhà khoa học.",
+        "characters": ["person", "scientist", "robot", "tiger", "bomb1", "bomb2"],
+        
+        "boat_capacity": 2,
+
+        # giữ style giống level 5 (có time_limit)
+        "time_limit": 60,
+
+        # data riêng giống tiger_times
+        "bomb_times": {
+            "bomb1": 1,
+            "bomb2": 1
+        },
+
+        "rules": {
+            "type": "complex_constraints"
+        },
+
+        "display_names": {
+            "person": "🧑 Người",
+            "scientist": "👨‍🔬 Nhà khoa học",
+            "robot": "🤖 Robot",
+            "tiger": "🐯 Hổ",
+            "bomb1": "💣 Bom 1",
+            "bomb2": "💣 Bom 2"
+        }
+    },
+    7: {
+    "name": "Bom hẹn giờ",
+    "description": "Đưa Người, Sói, Cừu và Bom qua sông. Bom phải được đưa sang bờ bên kia trong tối đa 5 lượt. Sói không được ăn cừu khi không có người.",
+    
+    "characters": ["person", "wolf", "sheep", "bomb"],
+    
+    "boat_capacity": 2,
+
+    # giống style level 5
+    "move_limit": 5,
+
+    "rules": {
+        "type": "timed_bomb"
+    },
+
+    "display_names": {
+        "person": "🧑 Người",
+        "wolf": "🐺 Sói",
+        "sheep": "🐑 Cừu",
+        "bomb": "💣 Bom"
     }
+},
+
+    8: {
+    "name": "Cừu và Bắp cải (Chuẩn)",
+    "description": "Đưa 3 cặp Cừu – Bắp cải qua sông. Bắp cải không được ở với cừu khác nếu thiếu cừu của mình.",
+    
+    "characters": [
+        "person",
+        "sheep1", "cabbage1",
+        "sheep2", "cabbage2",
+        "sheep3", "cabbage3"
+    ],
+
+    "boat_capacity": 2,
+
+    "rules": {
+        "type": "pair_strict"
+    },
+
+    "display_names": {
+        "person": "🧑 Người",
+        "sheep1": "🐑 Cừu 1",
+        "cabbage1": "🥬 Bắp 1",
+        "sheep2": "🐑 Cừu 2",
+        "cabbage2": "🥬 Bắp 2",
+        "sheep3": "🐑 Cừu 3",
+        "cabbage3": "🥬 Bắp 3"
+    }
+}
+
 }
 
 # Map nhân vật với ảnh
@@ -93,14 +173,26 @@ IMAGE_MAP = {
     "sheep3": "sheep.png",
     "cabbage": "cabbage.png",
     "bom": "bom.png",
+
+    # 🔥 FIX LEVEL 6
+    "bomb1": "bom.png",
+    "bomb2": "bom.png",
+    "bomb": "bom.png",
+    "robot": "robot.png",
     "robot1": "robot.png",
     "robot2": "robot.png",
+
     "box_small": "box.png",
     "box_medium": "box.png",
     "box_large": "box.png",
+
+    "tiger": "tiger.png",
     "tiger1": "tiger.png",
     "tiger2": "tiger.png",
     "tiger3": "tiger.png",
     "tiger4": "tiger.png",
-    "tiger5": "tiger.png"
+    "tiger5": "tiger.png",
+    "cabbage1": "cabbage.png",
+    "cabbage2": "cabbage.png",
+    "cabbage3": "cabbage.png",
 }

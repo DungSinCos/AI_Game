@@ -6,128 +6,150 @@ class GameState:
         self.boat_capacity = boat_capacity
         self.rules = rules or {"type": "classic"}
         self.state = state if state else tuple([0] * len(characters))
-        self.cost = 0  # for UCS and A*
+        self.cost = 0
+        self.moves = 0  # dùng cho level 7
 
     def is_valid(self, state=None):
         if state is None:
             state = self.state
 
-        # Level 1: Classic wolf-sheep-cabbage
+        # ===== LEVEL 1 =====
         if self.level == 1:
             p, w, s, c = state
-            # Sói ăn cừu nếu không có người
             if w == s and p != w:
                 return False
-            # Cừu ăn bắp cải nếu không có người
             if s == c and p != s:
                 return False
 
-        # Level 2: Sheep age constraint - Cừu hơn kém 1 tuổi không được ở cùng nhau nếu không có người
+        # ===== LEVEL 2 =====
         elif self.level == 2:
-            chars = self.characters
-            idx = {c: i for i, c in enumerate(chars)}
+            idx = {c: i for i, c in enumerate(self.characters)}
             person_pos = state[idx["person"]]
+            sheep_ages = {"sheep1": 1, "sheep2": 2, "sheep3": 3}
 
-            # Lấy vị trí và tuổi của từng con cừu
-            sheep_ages = {
-                "sheep1": 1,
-                "sheep2": 2,
-                "sheep3": 3
-            }
-
-            # Kiểm tra từng bờ
             for shore in [0, 1]:
-                # Nếu người ở bờ này, không cần kiểm tra
                 if person_pos == shore:
                     continue
 
-                # Lấy danh sách cừu ở bờ này
-                sheep_on_shore = []
-                for sheep_name, age in sheep_ages.items():
-                    if sheep_name in idx and state[idx[sheep_name]] == shore:
-                        sheep_on_shore.append((sheep_name, age))
+                sheep = []
+                for name, age in sheep_ages.items():
+                    if name in idx and state[idx[name]] == shore:
+                        sheep.append((name, age))
 
-                # Kiểm tra các cặp cừu có chênh lệch tuổi = 1
-                for i in range(len(sheep_on_shore)):
-                    for j in range(i + 1, len(sheep_on_shore)):
-                        age_diff = abs(sheep_on_shore[i][1] - sheep_on_shore[j][1])
-                        # Nếu chênh lệch = 1, chúng đánh nhau
-                        if age_diff == 1:
+                for i in range(len(sheep)):
+                    for j in range(i + 1, len(sheep)):
+                        if abs(sheep[i][1] - sheep[j][1]) == 1:
                             return False
 
-        # Level 3: Scientist and bomb - Bom phải có nhà nghiên cứu giám sát
+        # ===== LEVEL 3 =====
         elif self.level == 3:
-            chars = self.characters
-            idx = {c: i for i, c in enumerate(chars)}
-            scientist_pos = state[idx["scientist"]]
-            bom_pos = state[idx["bom"]]
-
-            # Bom không được ở một mình hoặc đi cùng người hỗ trợ mà thiếu nhà nghiên cứu
-            if bom_pos != scientist_pos:
+            idx = {c: i for i, c in enumerate(self.characters)}
+            if state[idx["bom"]] != state[idx["scientist"]]:
                 return False
 
-        # Level 4: Box constraints - Thùng không được ở cùng nhau nếu không có người
+        # ===== LEVEL 4 =====
         elif self.level == 4:
-            chars = self.characters
-            idx = {c: i for i, c in enumerate(chars)}
+            idx = {c: i for i, c in enumerate(self.characters)}
             person_pos = state[idx["person"]]
 
-            # Lấy vị trí các thùng
-            box_small_pos = state[idx.get("box_small", -1)] if "box_small" in idx else None
-            box_medium_pos = state[idx.get("box_medium", -1)] if "box_medium" in idx else None
-            box_large_pos = state[idx.get("box_large", -1)] if "box_large" in idx else None
-
-            # Kiểm tra từng bờ
             for shore in [0, 1]:
-                # Nếu người ở bờ này, không cần kiểm tra
                 if person_pos == shore:
                     continue
 
-                # Kiểm tra thùng nhỏ và thùng vừa ở cùng nhau
-                if box_small_pos is not None and box_medium_pos is not None:
-                    if box_small_pos == shore and box_medium_pos == shore:
-                        return False
-
-                # Kiểm tra thùng lớn và thùng nhỏ ở cùng nhau
-                if box_large_pos is not None and box_small_pos is not None:
-                    if box_large_pos == shore and box_small_pos == shore:
-                        return False
-
-        # Level 5: Tiger constraints - Hổ nhanh và hổ chậm không được ở cùng nhau nếu không có hổ trung gian
-        elif self.level == 5:
-            chars = self.characters
-            idx = {c: i for i, c in enumerate(chars)}
-            person_pos = state[idx["person"]]
-
-            # Lấy vị trí và thời gian của từng con hổ
-            tiger_times = self.level_data.get("tiger_times", {})
-            tiger_data = {}
-            for i, char in enumerate(chars):
-                if char.startswith("tiger"):
-                    tiger_data[char] = {
-                        "pos": state[i],
-                        "time": tiger_times.get(char, 1)
-                    }
-
-            # Kiểm tra từng bờ
-            for shore in [0, 1]:
-                # Nếu người ở bờ này, không cần kiểm tra
-                if person_pos == shore:
-                    continue
-
-                # Lấy danh sách hổ ở bờ này
-                tigers_on_shore = []
-                for name, data in tiger_data.items():
-                    if data["pos"] == shore:
-                        tigers_on_shore.append((name, data["time"]))
-
-                # Kiểm tra: hổ nhanh (1s, 3s) và hổ chậm (8s, 12s) không được ở cùng nhau nếu không có hổ 6s
-                fast_tigers = [t for t in tigers_on_shore if t[1] in [1, 3]]
-                slow_tigers = [t for t in tigers_on_shore if t[1] in [8, 12]]
-                has_medium = any(t[1] == 6 for t in tigers_on_shore)
-
-                if fast_tigers and slow_tigers and not has_medium:
+                if state[idx["box_small"]] == shore and state[idx["box_medium"]] == shore:
                     return False
+
+                if state[idx["box_small"]] == shore and state[idx["box_large"]] == shore:
+                    return False
+
+        # ===== LEVEL 5 =====
+        elif self.level == 5:
+            idx = {c: i for i, c in enumerate(self.characters)}
+            person_pos = state[idx["person"]]
+            tiger_times = self.level_data.get("tiger_times", {})
+
+            for shore in [0, 1]:
+                if person_pos == shore:
+                    continue
+
+                times = [
+                    tiger_times[c]
+                    for c in self.characters
+                    if c.startswith("tiger") and state[idx[c]] == shore
+                ]
+
+                if any(t in [1, 3] for t in times) and any(t in [8, 12] for t in times) and 6 not in times:
+                    return False
+
+        # ===== LEVEL 6 =====
+        elif self.level == 6:
+            idx = {c: i for i, c in enumerate(self.characters)}
+
+            p = state[idx["person"]]
+            s = state[idx["scientist"]]
+            r = state[idx["robot"]]
+            t = state[idx["tiger"]]
+            b1 = state[idx["bomb1"]]
+            b2 = state[idx["bomb2"]]
+
+            if b1 == b2:
+                return False
+
+            for b in [b1, b2]:
+                if r == b and p != r:
+                    return False
+
+            for shore in [0, 1]:
+                if t == shore:
+                    if p == shore and s != shore and r != shore:
+                        return False
+                    if s == shore and p != shore and r != shore:
+                        return False
+
+        # ===== LEVEL 7 =====
+        elif self.level == 7:
+            idx = {c: i for i, c in enumerate(self.characters)}
+
+            p = state[idx["person"]]
+            w = state[idx["wolf"]]
+            s = state[idx["sheep"]]
+            b = state[idx["bomb"]]
+
+            if w == s and p != w:
+                return False
+
+            limit = self.level_data.get("move_limit", 5)
+            if b == 0 and self.moves >= limit:
+                return False
+
+        # ===== LEVEL 8 (FINAL - ĐÃ FIX) =====
+        elif self.level == 8:
+            idx = {c: i for i, c in enumerate(self.characters)}
+            person_pos = state[idx["person"]]
+
+            pairs = [
+                ("sheep1", "cabbage1"),
+                ("sheep2", "cabbage2"),
+                ("sheep3", "cabbage3")
+            ]
+
+            for shore in [0, 1]:
+                # có người → an toàn
+                if person_pos == shore:
+                    continue
+
+                # danh sách cừu ở bờ
+                sheep_on = [s for s, _ in pairs if state[idx[s]] == shore]
+
+                for sheep, cabbage in pairs:
+                    cabbage_pos = state[idx[cabbage]]
+                    sheep_pos = state[idx[sheep]]
+
+                    # bắp ở đây nhưng thiếu cừu của nó
+                    if cabbage_pos == shore and sheep_pos != shore:
+                        # nếu có bất kỳ cừu nào → nguy hiểm
+                        if len(sheep_on) > 0:
+                            return False
 
         return True
 
@@ -135,79 +157,81 @@ class GameState:
         return all(x == 1 for x in self.state)
 
     def get_weight(self, items):
-        """Tính tổng trọng lượng của các vật được chọn (Level 4)"""
         if self.level != 4:
             return 0
-
         weights = self.level_data.get("weights", {})
-        total = 0
-        for item in items:
-            if item != "person":  # person không tính trọng lượng
-                total += weights.get(item, 0)
-        return total
+        return sum(weights.get(i, 0) for i in items if i != "person")
 
     def get_max_time(self, items):
-        """Tính thời gian di chuyển dựa trên vật chậm nhất (Level 5)"""
         if self.level != 5:
             return 0
-
-        tiger_times = self.level_data.get("tiger_times", {})
-        max_time = 0
-        for item in items:
-            if item != "person":  # person không tính thời gian
-                max_time = max(max_time, tiger_times.get(item, 1))
-        return max_time
+        times = self.level_data.get("tiger_times", {})
+        return max([times.get(i, 1) for i in items if i != "person"], default=0)
 
     def move(self, move_indices):
-        """
-        move_indices: list of indices to move (includes person)
-        """
-        # Kiểm tra sức chứa thuyền
         if len(move_indices) > self.boat_capacity:
             return None
 
-        # Level 2: Kiểm tra không được chở quá 2 cừu
+        chars = self.characters
+
+        # Level 2
         if self.level == 2:
-            chars = self.characters
-            sheep_count = sum(1 for idx in move_indices if idx != 0 and chars[idx].startswith("sheep"))
+            sheep_count = sum(1 for i in move_indices if i != 0 and chars[i].startswith("sheep"))
             if sheep_count > 2:
                 return None
 
-        # Level 4: Kiểm tra trọng lượng
+        # Level 4
         if self.level == 4:
-            item_names = [self.characters[i] for i in move_indices]
-            total_weight = self.get_weight(item_names)
-            weight_limit = self.level_data.get("weight_limit", 100)
-            if total_weight > weight_limit:
+            items = [chars[i] for i in move_indices]
+            if self.get_weight(items) > self.level_data.get("weight_limit", 100):
                 return None
 
-        # Level 5: Kiểm tra thời gian không vượt quá giới hạn
+        # Level 5
         if self.level == 5:
-            item_names = [self.characters[i] for i in move_indices]
-            move_time = self.get_max_time(item_names)
-            time_limit = self.level_data.get("time_limit", float('inf'))
-            if self.cost + move_time > time_limit:
+            items = [chars[i] for i in move_indices]
+            time = self.get_max_time(items)
+            if self.cost + time > self.level_data.get("time_limit", float('inf')):
                 return None
 
-        new_state = list(self.state)
-        # Đảo vị trí người và các vật được chọn
-        new_state[0] = 1 - new_state[0]  # person always moves
+        # Level 6
+        if self.level == 6:
+            moving = [chars[i] for i in move_indices]
 
-        for idx in move_indices:
-            if idx != 0:  # không đảo person lần nữa
-                new_state[idx] = 1 - new_state[idx]
+            if "bomb1" in moving and "bomb2" in moving:
+                return None
+
+            for bomb in ["bomb1", "bomb2"]:
+                if bomb in moving:
+                    if "scientist" not in moving:
+                        if "robot" in moving and "person" in moving:
+                            continue
+                        return None
+
+            if "robot" in moving and ("bomb1" in moving or "bomb2" in moving):
+                if "person" not in moving:
+                    return None
+
+        # tạo state mới
+        new_state = list(self.state)
+        new_state[0] = 1 - new_state[0]
+
+        for i in move_indices:
+            if i != 0:
+                new_state[i] = 1 - new_state[i]
 
         new_state = tuple(new_state)
 
         if not self.is_valid(new_state):
             return None
 
-        # Tính cost cho Level 5 (thời gian)
         new_cost = self.cost
         if self.level == 5:
-            item_names = [self.characters[i] for i in move_indices]
-            max_time = self.get_max_time(item_names)
-            new_cost = self.cost + max_time
+            items = [chars[i] for i in move_indices]
+            new_cost += self.get_max_time(items)
+
+        new_moves = self.moves
+        if self.level == 7:
+            new_moves += 1
 
         new_state_obj = GameState(
             self.characters,
@@ -217,7 +241,10 @@ class GameState:
             self.rules,
             self.level_data
         )
+
         new_state_obj.cost = new_cost
+        new_state_obj.moves = new_moves
+
         return new_state_obj
 
     def __hash__(self):
