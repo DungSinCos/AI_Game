@@ -1,4 +1,3 @@
-# ui.py
 import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
@@ -54,7 +53,7 @@ class GameUI:
 
         # Tiêu đề
         tk.Label(menu_frame, text="🌟 CHỌN LEVEL 🌟", font=("Arial", 28, "bold"),
-                  fg="white").pack(pady=20)
+                  fg="black").pack(pady=20)
 
         # Frame chứa các ô level
         levels_frame = tk.Frame(menu_frame)
@@ -69,7 +68,7 @@ class GameUI:
             level_frame.grid(row=(lv - 1) // 5, column=(lv - 1) % 5, padx=20, pady=20)  # 5 cột, nhiều hàng
 
             tk.Label(level_frame, text=f"Level {lv}", font=("Arial", 16, "bold"),
-                     bg=color, fg="white").pack(pady=10)
+                     bg=color, fg="black").pack(pady=10)
 
             def make_start(lv=lv):
                 def start_level():
@@ -91,6 +90,22 @@ class GameUI:
     def show_rule(self):
         level_data = levels[self.level_num]
         rule_text = level_data.get("description", "Không có luật cụ thể cho level này.")
+
+        # Thêm thông tin bổ sung cho từng level
+        if self.level_num == 2:
+            rule_text += "\n\n📋 Luật cụ thể:\n- Thuyền chở: 1 người + tối đa 2 cừu\n- Cừu hơn kém nhau 1 tuổi (1-2 hoặc 2-3) KHÔNG được ở cùng nhau nếu không có người\n- Cừu 1 và 3 tuổi có thể ở cùng nhau vì chênh lệch 2 tuổi"
+        elif self.level_num == 3:
+            time_limit = level_data.get("time_limit", 60)
+            rule_text += f"\n\n⏱️ Thời gian giới hạn: {time_limit} giây\n⚠️ Bom phải luôn có nhà nghiên cứu giám sát!"
+        elif self.level_num == 4:
+            weight_limit = level_data.get("weight_limit", 100)
+            weights = level_data.get("weights", {})
+            rule_text += f"\n\n📊 Thông tin thêm:\n- Giới hạn trọng lượng: {weight_limit}kg\n- Thùng nhỏ: {weights.get('box_small', 30)}kg\n- Thùng trung: {weights.get('box_medium', 60)}kg\n- Thùng lớn: {weights.get('box_large', 90)}kg\n- Thùng nhỏ và thùng vừa không được ở cùng nhau\n- Thùng lớn và thùng nhỏ không được ở cùng nhau"
+        elif self.level_num == 5:
+            tiger_times = level_data.get("tiger_times", {})
+            time_limit = level_data.get("time_limit", 30)
+            rule_text += f"\n\n⏱️ Thông tin thêm:\n- Giới hạn thời gian: {time_limit} giây\n- Hổ nhanh: {tiger_times.get('tiger1', 1)} giây\n- Hổ trung bình 1: {tiger_times.get('tiger2', 3)} giây\n- Hổ trung bình 2: {tiger_times.get('tiger3', 6)} giây\n- Hổ chậm: {tiger_times.get('tiger4', 8)} giây\n- Hổ rất chậm: {tiger_times.get('tiger5', 12)} giây\n\nMỗi lần thuyền qua sông mất thời gian = thời gian của con hổ chậm nhất trên thuyền.\nHổ nhanh (1s,3s) và hổ chậm (8s,12s) không được ở cùng nhau nếu không có hổ 6s."
+
         messagebox.showinfo("Luật chơi", rule_text)
 
     def start_game(self):
@@ -110,10 +125,11 @@ class GameUI:
         self.boat_side = 0
         self.steps = 0
         self.start_time = time.time()
+        self.time_elapsed = 0
 
         screen_w = self.root.winfo_screenwidth()
         self.left_boat = int(screen_w * 0.35)
-        self.right_boat = int(screen_w * 0.65)
+        self.right_boat = int(screen_w * 0.55)
         self.boat_x = self.left_boat
 
         main = tk.Frame(self.frame)
@@ -139,6 +155,24 @@ class GameUI:
         tk.Label(control, text=f"⛵ Sức chứa: {level_data['boat_capacity']} (tối đa {max_items} vật)",
                  font=("Arial", 9), bg="#eeeeee", fg="blue").pack(pady=5)
 
+        if level == 2:
+            tk.Label(control, text=f"🐑 Luật: Cừu chênh lệch 1 tuổi không ở cùng nhau nếu không có người",
+                     font=("Arial", 8), bg="#eeeeee", fg="red", wraplength=240).pack(pady=2)
+        elif level == 3:
+            time_limit = level_data.get("time_limit", 60)
+            tk.Label(control, text=f"⏱️ Thời gian giới hạn: {time_limit} giây",
+                     font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
+            tk.Label(control, text=f"⚠️ Bom phải có nhà nghiên cứu giám sát",
+                     font=("Arial", 8), bg="#eeeeee", fg="red", wraplength=240).pack(pady=2)
+        elif level == 4:
+            weight_limit = level_data.get("weight_limit", 100)
+            tk.Label(control, text=f"⚖️ Giới hạn trọng lượng: {weight_limit}kg",
+                     font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
+        elif level == 5:
+            time_limit = level_data.get("time_limit", 30)
+            tk.Label(control, text=f"⏱️ Tối ưu thời gian (≤{time_limit}s)",
+                     font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
+
         self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
         self.info_label.pack(pady=10)
         self.status_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
@@ -161,6 +195,12 @@ class GameUI:
         self.load_images()
         self.draw()
         self.update_timer()
+
+    def update_timer(self):
+        if hasattr(self, 'start_time'):
+            self.time_elapsed = int(time.time() - self.start_time)
+            self.update_status()
+            self.root.after(1000, self.update_timer)
 
     def make_button(self, parent, text, fg, bg, abg, command):
         return tk.Button(
@@ -253,7 +293,7 @@ class GameUI:
 
         for i, name in enumerate(characters):
             y_pos = start_y + i * y_step
-            LEFT_POS[name] = (int(screen_w * 0.15), y_pos)
+            LEFT_POS[name] = (int(screen_w * 0.05), y_pos)
             RIGHT_POS[name] = (int(screen_w * 0.75), y_pos)
 
         for name in characters:
@@ -484,16 +524,27 @@ class GameUI:
 
         self.move_boat(callback=after_move)
 
-    def update_timer(self):
-        if hasattr(self, 'start_time'):
-            self.time_elapsed = int(time.time() - self.start_time)
-            self.update_status()
-            self.root.after(1000, self.update_timer)
-
     def update_status(self):
-        self.status_label.config(
-            text=f"Thời gian: {self.time_elapsed} giây\n Số bước: {self.steps}"
-        )
+        """Cập nhật trạng thái hiển thị (thời gian, số bước)"""
+        if self.level_num == 3:
+            # Level 3: Hiển thị thời gian đã qua và thời gian còn lại
+            time_limit = levels[self.level_num].get("time_limit", 60)
+            time_left = max(0, time_limit - self.time_elapsed)
+            status_text = f"⏱️ Thời gian: {self.time_elapsed} giây\n⏰ Còn lại: {time_left} giây\n📊 Số bước: {self.steps}"
+
+            # Kiểm tra hết giờ
+            if self.time_elapsed >= time_limit and not self.state.is_goal():
+                messagebox.showinfo("Thất bại", f"Hết giờ! Bạn đã thua Level {self.level_num}!")
+                self.show_level_menu()
+                return
+        else:
+            # Các level khác
+            status_text = f"⏱️ Thời gian: {self.time_elapsed} giây\n📊 Số bước: {self.steps}"
+            if self.level_num == 5:
+                status_text += f"\n🐯 Tổng thời gian di chuyển: {self.state.cost} giây"
+
+        self.status_label.config(text=status_text)
+
 
     def clear(self):
         for w in self.frame.winfo_children():

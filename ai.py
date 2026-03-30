@@ -1,4 +1,3 @@
-# ai.py
 from collections import deque
 import heapq
 from game_logic import GameState
