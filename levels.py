@@ -52,17 +52,78 @@ levels = {
         "time_limit": 30,
         "rules": {"type": "time"}
     },
-
     6: {
-        "name": "Bom, Hổ và Nhà khoa học",
-        "description": "Hai bom không được ở cùng nếu không có nhà khoa học. Hổ không ở với người nếu thiếu nhà khoa học.",
-        "characters": ["person", "scientist", "robot", "tiger", "bomb1", "bomb2"],
-        "boat_capacity": 3,
-        "rules": {"type": "level6"}
+    "name": "Chuỗi nguy hiểm",
+    "description": "Đưa tất cả qua sông. Sói ăn Cừu, Hổ ăn Sói nếu không có Người. Bom không được ở với Hổ nếu thiếu Nhà khoa học. Robot phải đi cùng Người.",
+
+    "characters": ["person", "robot", "scientist", "wolf", "sheep", "tiger", "bomb"],
+
+    "boat_capacity": 2,
+
+    "rules": {
+        "type": "level6_chain"
+    },
+
+    "display_names": {
+        "person": "🧑 Người",
+        "robot": "🤖 Robot",
+        "scientist": "👨‍🔬 Nhà khoa học",
+        "wolf": "🐺 Sói",
+        "sheep": "🐑 Cừu",
+        "tiger": "🐯 Hổ",
+        "bomb": "💣 Bom"
+    }
+},
+    7: {
+    "name": "Bom hẹn giờ",
+    "description": "Đưa Người, Sói, Cừu và Bom qua sông. Bom phải được đưa sang bờ bên kia trong tối đa 5 lượt. Sói không được ăn cừu khi không có người.",
+    
+    "characters": ["person", "wolf", "sheep", "bomb"],
+    
+    "boat_capacity": 2,
+
+    # giống style level 5
+    "move_limit": 5,
+
+    "rules": {
+        "type": "timed_bomb"
+    },
+
+    "display_names": {
+        "person": "🧑 Người",
+        "wolf": "🐺 Sói",
+        "sheep": "🐑 Cừu",
+        "bomb": "💣 Bom"
+    }
+},
+    8: {
+    "name": "Robot và vật nguy hiểm",
+    "description": "Đưa Người, Robot, Sói, Cừu và Bom qua sông. Sói ăn Cừu nếu không có Người. Bom không được ở với Cừu nếu không có Người. Robot phải đi cùng Người.",
+    
+    "characters": [
+        "person",
+        "robot",
+        "wolf",
+        "sheep",
+        "bomb"
+    ],
+    
+    "boat_capacity": 2,
+
+    "rules": {
+        "type": "level8_medium_plus"
+    },
+
+    "display_names": {
+        "person": "🧑 Người",
+        "robot": "🤖 Robot",
+        "wolf": "🐺 Sói",
+        "sheep": "🐑 Cừu",
+        "bomb": "💣 Bom"
     }
 }
-
-# 🔥 PHẢI TÁCH RA NGOÀI
+}
+# Map nhân vật với ảnh 
 IMAGE_MAP = {
     "person": "person.png",
     "scientist": "scientist.png",
@@ -73,7 +134,7 @@ IMAGE_MAP = {
     "sheep3": "sheep.png",
     "cabbage": "cabbage.png",
     "bom": "bom.png",
-
+    "bomb": "bom.png",
     "bomb1": "bom.png",
     "bomb2": "bom.png",
 
