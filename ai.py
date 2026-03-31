@@ -222,7 +222,9 @@ def astar(start):
 
 
 def hint(state):
-    sol = bfs(state)
-    if sol and len(sol) > 1:
-        return sol[1]
+    path, _, _ = bfs(state)
+
+    if path and len(path) > 1:
+        return path[1]
+
     return None

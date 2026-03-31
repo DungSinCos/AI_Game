@@ -38,7 +38,7 @@ class GameUI:
             "Nguyễn Thị Hoa - 24133018"
         ]
 
-        # Vị trí hiển thị (góc dưới bên phải)
+        #  (góc dưới bên phải)
         start_y = screen_h - 140
         for i, text in enumerate(group_info):
             self.canvas.create_text(
@@ -67,35 +67,28 @@ class GameUI:
     def show_level_menu(self):
         self.clear()
 
-        # Nền xanh lá nhẹ
+
         menu_frame = tk.Frame(self.frame, bg="#90EE90")  # Màu xanh lá nhẹ
         menu_frame.pack(fill="both", expand=True)
-
-        # Tiêu đề
         tk.Label(menu_frame, text="🌟 CHỌN LEVEL 🌟", font=("Arial", 28, "bold"),
                  fg="black", bg="#90EE90").pack(pady=30)
 
-        # Frame chứa các ô level
+
         levels_frame = tk.Frame(menu_frame, bg="#90EE90")
         levels_frame.pack(expand=True)
 
-        # Màu sắc cho các ô
         colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
                   "#FF9F4A", "#DDA0DD", "#98D8C8", "#F7D794", "#C7CEE6"]
-
         total_levels = len(levels)
         rows = 2
         cols = 5
 
-        # Kích thước ô cố định
         box_width = 180
         box_height = 180
 
         for lv in range(1, total_levels + 1):
             row = (lv - 1) // cols
             col = (lv - 1) % cols
-
-            # Chỉ hiển thị trong khung 5x2 (từ level 1 đến 10)
             if row >= rows:
                 break
 
@@ -133,55 +126,36 @@ class GameUI:
         rule_text = level_data.get("description", "Không có luật cụ thể cho level này.")
 
         if self.level_num == 2:
-            rule_text += "\n\n📋 Luật cụ thể:\n- Thuyền chở: 1 người + tối đa 2 cừu\n- Cừu hơn kém nhau 1 tuổi (1-2 hoặc 2-3) KHÔNG được ở cùng nhau nếu không có người\n- Cừu 1 và 3 tuổi có thể ở cùng nhau vì chênh lệch 2 tuổi"
+            rule_text += "\n\n Luật cụ thể:\n- Thuyền chở: 1 người + tối đa 2 cừu\n- Cừu hơn kém nhau 1 tuổi (1-2 hoặc 2-3) KHÔNG được ở cùng nhau nếu không có người\n- Cừu 1 và 3 tuổi có thể ở cùng nhau vì chênh lệch 2 tuổi"
         elif self.level_num == 3:
             time_limit = level_data.get("time_limit", 60)
-            rule_text += f"\n\n⏱️ Thời gian giới hạn: {time_limit} giây\n⚠️ Bom phải luôn có nhà nghiên cứu giám sát!"
+            rule_text += f"\n\n⏱ Thời gian giới hạn: {time_limit} giây\n Bom phải luôn có nhà nghiên cứu giám sát!"
         elif self.level_num == 4:
             weight_limit = level_data.get("weight_limit", 100)
             weights = level_data.get("weights", {})
-            rule_text += f"\n\n📊 Thông tin thêm:\n- Giới hạn trọng lượng: {weight_limit}kg\n- Thùng nhỏ: {weights.get('box_small', 30)}kg\n- Thùng trung: {weights.get('box_medium', 60)}kg\n- Thùng lớn: {weights.get('box_large', 90)}kg\n- Thùng nhỏ và thùng vừa không được ở cùng nhau\n- Thùng lớn và thùng nhỏ không được ở cùng nhau"
+            rule_text += f"\n\n Thông tin thêm:\n- Giới hạn trọng lượng: {weight_limit}kg\n- Thùng nhỏ: {weights.get('box_small', 30)}kg\n- Thùng trung: {weights.get('box_medium', 60)}kg\n- Thùng lớn: {weights.get('box_large', 90)}kg\n- Thùng nhỏ và thùng vừa không được ở cùng nhau\n- Thùng lớn và thùng nhỏ không được ở cùng nhau"
         elif self.level_num == 5:
             tiger_times = level_data.get("tiger_times", {})
             time_limit = level_data.get("time_limit", 30)
-            rule_text += f"\n\n⏱️ Thông tin thêm:\n- Giới hạn thời gian: {time_limit} giây\n- Hổ nhanh (tiger1): {tiger_times.get('tiger1', 1)} giây\n- Hổ trung bình 1 (tiger2): {tiger_times.get('tiger2', 3)} giây\n- Hổ trung bình 2 (tiger3): {tiger_times.get('tiger3', 6)} giây\n- Hổ chậm (tiger4): {tiger_times.get('tiger4', 8)} giây\n- Hổ rất chậm (tiger5): {tiger_times.get('tiger5', 12)} giây\n\nMỗi lần thuyền qua sông mất thời gian = thời gian của con hổ chậm nhất trên thuyền.\nHổ nhanh (1s,3s) và hổ chậm (8s,12s) không được ở cùng nhau nếu không có hổ 6s."
+            rule_text += f"\n\n Thông tin thêm:\n- Giới hạn thời gian: {time_limit} giây\n- Hổ nhanh (tiger1): {tiger_times.get('tiger1', 1)} giây\n- Hổ trung bình 1 (tiger2): {tiger_times.get('tiger2', 3)} giây\n- Hổ trung bình 2 (tiger3): {tiger_times.get('tiger3', 6)} giây\n- Hổ chậm (tiger4): {tiger_times.get('tiger4', 8)} giây\n- Hổ rất chậm (tiger5): {tiger_times.get('tiger5', 12)} giây\n\nMỗi lần thuyền qua sông mất thời gian = thời gian của con hổ chậm nhất trên thuyền.\nHổ nhanh (1s,3s) và hổ chậm (8s,12s) không được ở cùng nhau nếu không có hổ 6s."
         elif self.level_num == 6:
             rule_text += """
-
-📜 LUẬT NHỮNG NGƯỜI ĐẶC BIỆT:
-
-😴 Lười biếng (scientist1):
+Lười biếng (scientist1):
    - KHÔNG được ở một mình trên bờ (phải có người khác cùng bờ)
-
-👑 Kiêu ngạo (scientist2):
+Kiêu ngạo (scientist2):
    - CHỈ thích đi thuyền một mình (không chịu đi cùng ai)
-
-⚔️ Dũng cảm (person1, person2):
+Dũng cảm (person1, person2):
    - Có thể lái thuyền và đi với bất kỳ ai
-
-🚤 Thuyền chở tối đa 2 người
-
-💡 CÁCH GIẢI (7 bước):
-
-Bước 1: ⚔️ Dũng1 + ⚔️ Dũng2 → (sang phải)
-Bước 2: ⚔️ Dũng1 ← (quay lại)
-Bước 3: ⚔️ Dũng1 + 😴 Lười → (sang phải)
-Bước 4: ⚔️ Dũng1 ← (quay lại)
-Bước 5: 👑 Kiêu → (sang phải một mình)
-Bước 6: ⚔️ Dũng2 ← (quay lại)
-Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
-
-✅ Tất cả đã qua sông!
 """
         elif self.level_num == 7:
             move_limit = level_data.get("move_limit", 5)
-            rule_text += f"\n\n💣 Bom sẽ nổ sau {move_limit} lượt di chuyển!\n🐺 Sói không được ăn Cừu khi không có Người"
+            rule_text += f"\n\n Bom sẽ nổ sau {move_limit} lượt di chuyển!\n🐺 Sói không được ăn Cừu khi không có Người"
         elif self.level_num == 8:
-            rule_text += "\n\n📜 Luật:\n- Sói ăn Cừu nếu không có Người\n- Bom không được ở với Cừu nếu không có Người\n- Robot phải đi cùng Người"
+            rule_text += "\n\n Luật:\n- Sói ăn Cừu nếu không có Người\n- Bom không được ở với Cừu nếu không có Người\n- Robot phải đi cùng Người"
         elif self.level_num == 9:
-            rule_text += "\n\n📜 Luật:\n- Robot không được đi một mình\n- Bom có thể đi tự do"
+            rule_text += "\n\n Luật:\n- Robot không được đi một mình\n- Bom có thể đi tự do"
         elif self.level_num == 10:
-            rule_text += "\n\n📜 Luật:\n- Nếu số Hổ nhiều hơn số Sói ở bất kỳ bờ nào, Sói sẽ bị ăn"
+            rule_text += "\n\n Luật:\n- Nếu số Hổ nhiều hơn số Sói ở bất kỳ bờ nào, Sói sẽ bị ăn"
 
         messagebox.showinfo("Luật chơi", rule_text)
 
@@ -228,11 +202,11 @@ Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
         self.canvas.pack(fill="both", expand=True)
         self.canvas.bind("<Button-1>", self.on_click)
 
-        tk.Label(control, text=f"🎮 LEVEL {level}: {level_data['name']}",
+        tk.Label(control, text=f" LEVEL {level}: {level_data['name']}",
                  font=("Arial", 10, "bold"), bg="#eeeeee").pack(pady=5)
 
         max_items = level_data["boat_capacity"] - 1
-        tk.Label(control, text=f"⛵ Sức chứa: {level_data['boat_capacity']} (tối đa {max_items} vật)",
+        tk.Label(control, text=f" Sức chứa: {level_data['boat_capacity']} (tối đa {max_items} vật)",
                  font=("Arial", 9), bg="#eeeeee", fg="blue").pack(pady=5)
 
         if level == 2:
@@ -240,28 +214,28 @@ Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
                      font=("Arial", 8), bg="#eeeeee", fg="red", wraplength=240).pack(pady=2)
         elif level == 3:
             time_limit = level_data.get("time_limit", 60)
-            tk.Label(control, text=f"⏱️ Thời gian giới hạn: {time_limit} giây",
+            tk.Label(control, text=f" Thời gian giới hạn: {time_limit} giây",
                      font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
-            tk.Label(control, text=f"⚠️ Bom phải có nhà nghiên cứu giám sát",
+            tk.Label(control, text=f" Bom phải có nhà nghiên cứu giám sát",
                      font=("Arial", 8), bg="#eeeeee", fg="red", wraplength=240).pack(pady=2)
         elif level == 4:
             weight_limit = level_data.get("weight_limit", 100)
-            tk.Label(control, text=f"⚖️ Giới hạn trọng lượng: {weight_limit}kg",
+            tk.Label(control, text=f" Giới hạn trọng lượng: {weight_limit}kg",
                      font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
         elif level == 5:
             time_limit = level_data.get("time_limit", 30)
-            tk.Label(control, text=f"⏱️ Tối ưu thời gian (≤{time_limit}s)",
+            tk.Label(control, text=f" Tối ưu thời gian (≤{time_limit}s)",
                      font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
         elif level == 6:
-            tk.Label(control, text=f"😴 Lười: KHÔNG ở một mình",
+            tk.Label(control, text=f" Lười: KHÔNG ở một mình",
                      font=("Arial", 7), bg="#eeeeee", fg="red", wraplength=240).pack(pady=2)
-            tk.Label(control, text=f"👑 Kiêu: CHỈ đi thuyền một mình",
+            tk.Label(control, text=f" Kiêu: CHỈ đi thuyền một mình",
                      font=("Arial", 7), bg="#eeeeee", fg="red", wraplength=240).pack(pady=2)
-            tk.Label(control, text=f"⚔️ Dũng cảm: Có thể lái thuyền",
+            tk.Label(control, text=f" Dũng cảm: Có thể lái thuyền",
                      font=("Arial", 7), bg="#eeeeee", fg="green", wraplength=240).pack(pady=2)
         elif level == 7:
             move_limit = level_data.get("move_limit", 5)
-            tk.Label(control, text=f"💣 Bom sẽ nổ sau {move_limit} lượt",
+            tk.Label(control, text=f" Bom sẽ nổ sau {move_limit} lượt",
                      font=("Arial", 9), bg="#eeeeee", fg="red").pack(pady=2)
 
         self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
@@ -289,42 +263,42 @@ Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
 
         if self.level_num == 2:
             if char_name == "sheep1":
-                return "🐑 Cừu 1 tuổi"
+                return " Cừu 1 tuổi"
             elif char_name == "sheep2":
-                return "🐏 Cừu 2 tuổi"
+                return " Cừu 2 tuổi"
             elif char_name == "sheep3":
-                return "🐏 Cừu 3 tuổi"
+                return " Cừu 3 tuổi"
         elif self.level_num == 4:
             weights = level_data.get("weights", {})
             if char_name == "box_small":
-                return f"📦 Thùng nhỏ ({weights.get('box_small', 30)}kg)"
+                return f" Thùng nhỏ ({weights.get('box_small', 30)}kg)"
             elif char_name == "box_medium":
-                return f"📦 Thùng trung ({weights.get('box_medium', 60)}kg)"
+                return f" Thùng trung ({weights.get('box_medium', 60)}kg)"
             elif char_name == "box_large":
-                return f"📦 Thùng lớn ({weights.get('box_large', 90)}kg)"
+                return f" Thùng lớn ({weights.get('box_large', 90)}kg)"
         elif self.level_num == 5:
             tiger_times = level_data.get("tiger_times", {})
             if char_name in tiger_times:
                 time_val = tiger_times[char_name]
                 if char_name == "tiger1":
-                    return f"🐯 Hổ nhanh ({time_val}s)"
+                    return f" Hổ nhanh ({time_val}s)"
                 elif char_name == "tiger2":
-                    return f"🐯 Hổ TB 1 ({time_val}s)"
+                    return f" Hổ TB 1 ({time_val}s)"
                 elif char_name == "tiger3":
-                    return f"🐯 Hổ TB 2 ({time_val}s)"
+                    return f" Hổ TB 2 ({time_val}s)"
                 elif char_name == "tiger4":
-                    return f"🐯 Hổ chậm ({time_val}s)"
+                    return f" Hổ chậm ({time_val}s)"
                 elif char_name == "tiger5":
-                    return f"🐯 Hổ rất chậm ({time_val}s)"
+                    return f" Hổ rất chậm ({time_val}s)"
         elif self.level_num == 6:
             if char_name == "person1":
-                return "⚔️ Dũng cảm 1"
+                return "Dũng cảm 1"
             elif char_name == "person2":
-                return "⚔️ Dũng cảm 2"
+                return "Dũng cảm 2"
             elif char_name == "scientist1":
-                return "😴 Lười biếng"
+                return "Lười biếng"
             elif char_name == "scientist2":
-                return "👑 Kiêu ngạo"
+                return "Kiêu ngạo"
         return char_name
 
     def update_timer(self):
@@ -680,7 +654,7 @@ Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
 
         elif self.level_num == 5:
             cost = getattr(self.state, 'cost', 0)
-            status_text = f"⏱️ Thời gian thực: {self.time_elapsed} giây\n🐯 Tổng thời gian di chuyển: {cost} giây\n📊 Số bước: {self.steps}"
+            status_text = f"⏱️ Thời gian thực: {self.time_elapsed} giây\n Tổng thời gian di chuyển: {cost} giây\n Số bước: {self.steps}"
 
             time_limit = levels[self.level_num].get("time_limit", 30)
             if self.state.cost > time_limit and not self.state.is_goal() and not self.game_over:
@@ -696,7 +670,7 @@ Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
 
             if bomb_side == 0:
                 remaining = max(0, self.move_limit - self.state.moves)
-                status_text = f"💣 Bom ở bờ trái\n⏰ Số lượt còn lại: {remaining}/{self.move_limit}\n📊 Số bước: {self.steps}"
+                status_text = f"💣 Bom ở bờ trái\n Số lượt còn lại: {remaining}/{self.move_limit}\n Số bước: {self.steps}"
 
                 if self.state.moves >= self.move_limit and not self.state.is_goal() and not self.game_over:
                     self.game_over = True
@@ -704,10 +678,10 @@ Bước 7: ⚔️ Dũng1 + ⚔️ Dũng2 → (hoàn thành)
                     self.show_level_menu()
                     return
             else:
-                status_text = f"💣 Bom đã qua sông an toàn\n📊 Số bước: {self.steps}"
+                status_text = f"💣 Bom đã qua sông an toàn\n Số bước: {self.steps}"
 
         else:
-            status_text = f"⏱️ Thời gian: {self.time_elapsed} giây\n📊 Số bước: {self.steps}"
+            status_text = f" Thời gian: {self.time_elapsed} giây\n Số bước: {self.steps}"
 
         self.status_label.config(text=status_text)
 

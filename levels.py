@@ -22,11 +22,11 @@ levels = {
     "boat_capacity": 2,
     "rules": {"type": "simple"},
     "display_names": {
-        "person": "🧑 Người",
-        "scientist": "👨‍🔬 Nhà khoa học",
-        "bom": "💣 Bom",
-        "robot1": "🤖 Robot 1",
-        "robot2": "🤖 Robot 2"
+        "person": "Người",
+        "scientist": "Nhà khoa học",
+        "bom": "Bom",
+        "robot1": "Robot 1",
+        "robot2": "Robot 2"
     }
 },
 
@@ -72,10 +72,10 @@ levels = {
         },
 
         "display_names": {
-            "person1": "⚔️ Dũng cảm 1",
-            "person2": "⚔️ Dũng cảm 2",
-            "scientist1": "😴 Lười biếng",
-            "scientist2": "👑 Kiêu ngạo"
+            "person1": "Dũng cảm 1",
+            "person2": "Dũng cảm 2",
+            "scientist1": "Lười biếng",
+            "scientist2": "Kiêu ngạo"
         }
     },
 
@@ -95,10 +95,10 @@ levels = {
     },
 
     "display_names": {
-        "person": "🧑 Người",
-        "wolf": "🐺 Sói",
-        "sheep": "🐑 Cừu",
-        "bomb": "💣 Bom"
+        "person": "Người",
+        "wolf": "Sói",
+        "sheep": "Cừu",
+        "bomb": "Bom"
     }
 },
     8: {
@@ -120,11 +120,11 @@ levels = {
     },
 
     "display_names": {
-        "person": "🧑 Người",
-        "robot": "🤖 Robot",
-        "wolf": "🐺 Sói",
-        "sheep": "🐑 Cừu",
-        "bomb": "💣 Bom"
+        "person": "Người",
+        "robot": "Robot",
+        "wolf": "Sói",
+        "sheep": "Cừu",
+        "bomb": "Bom"
     }
 },
    9: {
@@ -145,10 +145,10 @@ levels = {
     },
 
     "display_names": {
-        "person": "🧑 Người",
-        "robot": "🤖 Robot",
-        "bomb1": "💣 Bom 1",
-        "bomb2": "💣 Bom 2"
+        "person": "Người",
+        "robot": "Robot",
+        "bomb1": "Bom 1",
+        "bomb2": "Bom 2"
     }
 },
     10: {
@@ -164,11 +164,11 @@ levels = {
     },
 
     "display_names": {
-        "person": "🧑 Người lái",
-        "tiger1": "🐯 Hổ 1",
-        "tiger2": "🐯 Hổ 2",
-        "wolf1": "🐺 Sói 1",
-        "wolf2": "🐺 Sói 2"
+        "person": "Người lái",
+        "tiger1": "Hổ 1",
+        "tiger2": "Hổ 2",
+        "wolf1": "Sói 1",
+        "wolf2": "Sói 2"
     }
 }
 }

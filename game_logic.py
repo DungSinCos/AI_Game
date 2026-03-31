@@ -154,15 +154,11 @@ class GameState:
                 return False
         return True
 
-    # ========================
-    # CHECK WIN
-    # ========================
+
     def is_goal(self):
         return all(x == 1 for x in self.state)
 
-    # ========================
-    # MOVE
-    # ========================
+
     def move(self, move_indices):
         if len(move_indices) > self.boat_capacity:
             return None
@@ -171,20 +167,17 @@ class GameState:
             if self.state[i] != self.boat_side:
                 return None
 
-        # RULE cho level 6
+
         if self.level == 6:
             arrogant_idx = self.characters.index("scientist2")
             lazy_idx = self.characters.index("scientist1")
 
-            # Kiêu ngạo không đi cùng ai trên thuyền
             if arrogant_idx in move_indices and len(move_indices) > 1:
                 return None
 
-            # Lười biếng không được lái thuyền một mình
             if len(move_indices) == 1 and lazy_idx in move_indices:
                 return None
 
-            # Lười biếng phải có người lái
             if lazy_idx in move_indices:
                 has_driver = any(i != lazy_idx for i in move_indices)
                 if not has_driver:
