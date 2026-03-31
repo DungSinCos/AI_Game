@@ -1,3 +1,5 @@
+from itertools import combinations
+
 class GameState:
     def __init__(self, characters, state=None, level=1, boat_capacity=2, rules=None, level_data=None):
         self.characters = characters
@@ -6,175 +8,45 @@ class GameState:
         self.boat_capacity = boat_capacity
         self.rules = rules or {"type": "classic"}
         self.state = state if state else tuple([0] * len(characters))
-        self.cost = 0
         self.moves = 0
 
+    # ========================
+    # CHECK STATE HỢP LỆ
+    # ========================
     def is_valid(self, state=None):
-        if state is None:
-            state = self.state
+        state = state if state else self.state
 
-        # ===== LEVEL 1 =====
-        if self.level == 1:
-            p, w, s, c = state
-            if w == s and p != w:
-                return False
-            if s == c and p != s:
-                return False
+        # 🔹 LEVEL 3: simple → luôn hợp lệ
+        if self.rules["type"] == "simple":
+            return True
 
-        # ===== LEVEL 2 =====
-        elif self.level == 2:
-            idx = {c: i for i, c in enumerate(self.characters)}
-            person_pos = state[idx["person"]]
-
-            sheep_ages = {"sheep1": 1, "sheep2": 2, "sheep3": 3}
-
-            for shore in [0, 1]:
-                if person_pos == shore:
-                    continue
-
-                sheep = []
-                for name, age in sheep_ages.items():
-                    if name in idx and state[idx[name]] == shore:
-                        sheep.append((name, age))
-
-                for i in range(len(sheep)):
-                    for j in range(i + 1, len(sheep)):
-                        if abs(sheep[i][1] - sheep[j][1]) == 1:
-                            return False
-
-        # ===== LEVEL 3 =====
-        elif self.level == 3:
-            idx = {c: i for i, c in enumerate(self.characters)}
-            if state[idx["bom"]] != state[idx["scientist"]]:
-                return False
-
-        # ===== LEVEL 4 =====
-        elif self.level == 4:
-            idx = {c: i for i, c in enumerate(self.characters)}
-            person_pos = state[idx["person"]]
-
-            for shore in [0, 1]:
-                if person_pos == shore:
-                    continue
-
-                if state[idx["box_small"]] == shore and state[idx["box_medium"]] == shore:
-                    return False
-
-                if state[idx["box_small"]] == shore and state[idx["box_large"]] == shore:
-                    return False
-
-        # ===== LEVEL 5 =====
-        elif self.level == 5:
-            idx = {c: i for i, c in enumerate(self.characters)}
-            person_pos = state[idx["person"]]
-            tiger_times = self.level_data.get("tiger_times", {})
-
-            for shore in [0, 1]:
-                if person_pos == shore:
-                    continue
-
-                times = [
-                    tiger_times[c]
-                    for c in self.characters
-                    if c.startswith("tiger") and state[idx[c]] == shore
-                ]
-
-                if any(t in [1, 3] for t in times) and any(t in [8, 12] for t in times) and 6 not in times:
-                    return False
-
-        # ===== LEVEL 6 (CHAIN LOGIC) =====
-        elif self.level == 6:
-            idx = {c: i for i, c in enumerate(self.characters)}
-
-            p = state[idx["person"]]
-            r = state[idx["robot"]]
-            s = state[idx["scientist"]]
-            w = state[idx["wolf"]]
-            sh = state[idx["sheep"]]
-            t = state[idx["tiger"]]
-            b = state[idx["bomb"]]
-
-            # 🤖 Robot phải đi cùng người (ở cùng bờ)
-            if r != p:
-                return False
-
-            for shore in [0, 1]:
-
-                # 🐺 Sói ăn cừu
-                if w == shore and sh == shore and p != shore:
-                    return False
-
-                # 🐯 Hổ ăn sói
-                if t == shore and w == shore and p != shore:
-                    return False
-
-                # 💣 Bom + Hổ cần scientist
-                if b == shore and t == shore and s != shore:
-                    return False
-
-        # ===== LEVEL 7 =====
-        elif self.level == 7:
-            idx = {c: i for i, c in enumerate(self.characters)}
-
-            p = state[idx["person"]]
-            w = state[idx["wolf"]]
-            s = state[idx["sheep"]]
-            b = state[idx["bomb"]]
-
-            # Sói ăn cừu
-            if w == s and p != w:
-                return False
-
-            # Kiểm tra bom chưa qua sông nhưng đã hết lượt
-            # Lưu ý: self.moves là số lượt đã thực hiện, không phải số lượt của state mới
-            limit = self.level_data.get("move_limit", 5)
-            # Nếu bom vẫn ở bờ trái (0) và số lượt đã thực hiện >= limit thì thua
-            if b == 0 and self.moves >= limit:
-                return False
-
-        # ===== LEVEL 8 =====
-        elif self.level == 8:
-            idx = {c: i for i, c in enumerate(self.characters)}
-
-            p = state[idx["person"]]
-            w = state[idx["wolf"]]
-            s = state[idx["sheep"]]
-            b = state[idx["bomb"]]
-
-            if w == s and p != w:
-                return False
-
-            if b == s and p != b:
-                return False
-
+        # 🔹 fallback (sau này thêm rule khác)
         return True
 
+    # ========================
+    # CHECK WIN
+    # ========================
     def is_goal(self):
         return all(x == 1 for x in self.state)
 
+    # ========================
+    # MOVE
+    # ========================
     def move(self, move_indices):
+        # quá số người trên thuyền
         if len(move_indices) > self.boat_capacity:
             return None
 
-        chars = self.characters
+        boat_side = self.state[0]
 
-        # ===== LEVEL 6 =====
-        if self.level == 6:
-            moving = [chars[i] for i in move_indices]
-
-            # 🤖 Robot phải đi cùng người
-            if "robot" in moving and "person" not in moving:
+        # tất cả phải cùng bờ với người
+        for i in move_indices:
+            if self.state[i] != boat_side:
                 return None
 
-        # ===== LEVEL 8 =====
-        if self.level == 8:
-            moving = [chars[i] for i in move_indices]
-
-            if "robot" in moving and "person" not in moving:
-                return None
-
-        # ===== tạo state mới =====
         new_state = list(self.state)
+
+        # người luôn di chuyển
         new_state[0] = 1 - new_state[0]
 
         for i in move_indices:
@@ -183,6 +55,7 @@ class GameState:
 
         new_state = tuple(new_state)
 
+        # check valid (level 3 luôn true)
         if not self.is_valid(new_state):
             return None
 
@@ -194,31 +67,30 @@ class GameState:
             self.rules,
             self.level_data
         )
-
-        # ===== Tính toán cost cho level 5 =====
-        if self.level == 5:
-            tiger_times = self.level_data.get("tiger_times", {})
-            boat_side = self.state[0]
-
-            # Tìm các con hổ trên thuyền (không bao gồm người)
-            tigers_on_boat = []
-            for i in move_indices:
-                if i != 0 and chars[i].startswith("tiger"):
-                    tigers_on_boat.append(chars[i])
-
-            # Tính thời gian di chuyển = thời gian của hổ chậm nhất trên thuyền
-            move_time = 0
-            if tigers_on_boat:
-                max_time = max(tiger_times[tiger] for tiger in tigers_on_boat)
-                move_time = max_time
-            else:
-                move_time = 0
-
-            # Cộng dồn vào cost
-            new_state_obj.cost = self.cost + move_time
-            new_state_obj.moves = self.moves + 1
-        else:
-            new_state_obj.cost = self.cost
-            new_state_obj.moves = self.moves + 1
+        new_state_obj.moves = self.moves + 1
 
         return new_state_obj
+
+    # ========================
+    # GET ALL POSSIBLE MOVES
+    # ========================
+    def get_possible_moves(self):
+        boat_side = self.state[0]
+
+        # các nhân vật cùng bờ
+        same_side = [i for i, v in enumerate(self.state) if v == boat_side]
+
+        all_moves = []
+
+        for r in range(1, self.boat_capacity + 1):
+            for combo in combinations(same_side, r):
+
+                # bắt buộc có người
+                if 0 not in combo:
+                    continue
+
+                new_state = self.move(combo)
+                if new_state:
+                    all_moves.append(new_state)
+
+        return all_moves
