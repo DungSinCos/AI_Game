@@ -60,27 +60,25 @@ levels = {
         "rules": {"type": "time"}
     },
     6: {
-    "name": "Chuỗi nguy hiểm",
-    "description": "Đưa tất cả qua sông. Sói ăn Cừu, Hổ ăn Sói nếu không có Người. Bom không được ở với Hổ nếu thiếu Nhà khoa học. Robot phải đi cùng Người.",
+        "name": "Những người đặc biệt",
+        "description": "Đưa 4 người qua sông. Thuyền chở tối đa 2 người. Lười biếng (scientist1) không ở một mình. Kiêu ngạo (scientist2) không chịu đi cùng người khác trên thuyền.",
 
-    "characters": ["person", "robot", "scientist", "wolf", "sheep", "tiger", "bomb"],
+        "characters": ["person1", "person2", "scientist1", "scientist2"],
 
-    "boat_capacity": 2,
+        "boat_capacity": 2,
 
-    "rules": {
-        "type": "level6_chain"
+        "rules": {
+            "type": "special_people"
+        },
+
+        "display_names": {
+            "person1": "⚔️ Dũng cảm 1",
+            "person2": "⚔️ Dũng cảm 2",
+            "scientist1": "😴 Lười biếng",
+            "scientist2": "👑 Kiêu ngạo"
+        }
     },
 
-    "display_names": {
-        "person": "🧑 Người",
-        "robot": "🤖 Robot",
-        "scientist": "👨‍🔬 Nhà khoa học",
-        "wolf": "🐺 Sói",
-        "sheep": "🐑 Cừu",
-        "tiger": "🐯 Hổ",
-        "bomb": "💣 Bom"
-    }
-},
     7: {
     "name": "Bom hẹn giờ",
     "description": "Đưa Người, Sói, Cừu và Bom qua sông. Bom phải được đưa sang bờ bên kia trong tối đa 5 lượt. Sói không được ăn cừu khi không có người.",
@@ -174,10 +172,15 @@ levels = {
     }
 }
 }
-# Map nhân vật với ảnh 
+
+
 IMAGE_MAP = {
     "person": "person.png",
     "scientist": "scientist.png",
+    "person1": "person.png",
+    "person2": "person.png",
+    "scientist1": "scientist.png",
+    "scientist2": "scientist.png",
     "wolf": "wolf.png",
     "sheep": "sheep.png",
     "sheep1": "sheep.png",
@@ -201,20 +204,14 @@ IMAGE_MAP = {
     "box2": "box.png",
     "box3": "box.png",
     "box4": "box.png",
-    "person": "person.png",
 
-    "tiger": "tiger.png",
-    "tiger1": "tiger.png",
-    "tiger2": "tiger.png",
-
-    "wolf": "wolf.png",
-    "wolf1": "wolf.png",
-    "wolf2": "wolf.png",
-    
     "tiger": "tiger.png",
     "tiger1": "tiger.png",
     "tiger2": "tiger.png",
     "tiger3": "tiger.png",
     "tiger4": "tiger.png",
-    "tiger5": "tiger.png"
+    "tiger5": "tiger.png",
+
+    "wolf1": "wolf.png",
+    "wolf2": "wolf.png",
 }

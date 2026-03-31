@@ -1,14 +1,24 @@
 from collections import deque
 import heapq
 from game_logic import GameState
+import time
+from itertools import combinations
 
 
 def generate_moves(state):
-    """Tạo các nước đi khả thi từ trạng thái hiện tại"""
     moves = []
     characters = state.characters
 
-    # Tìm người lái thuyền (person hoặc scientist)
+    if state.level == 6:
+        same_side = [i for i, v in enumerate(state.state) if v == state.boat_side]
+
+        for r in range(1, state.boat_capacity + 1):
+            for combo in combinations(same_side, r):
+                new_state = state.move(combo)
+                if new_state:
+                    moves.append(new_state)
+        return moves
+
     driver_idx = None
     if "person" in characters:
         driver_idx = characters.index("person")
@@ -18,32 +28,19 @@ def generate_moves(state):
     if driver_idx is None:
         return moves
 
-    # Các vật có thể chở (không bao gồm người lái)
     other_indices = [i for i in range(len(characters)) if i != driver_idx]
-
-    # Tạo tất cả tổ hợp vật với kích thước từ 0 đến boat_capacity-1
-    # (0 nghĩa là chỉ chở người lái)
-    from itertools import combinations
 
     for r in range(0, state.boat_capacity):
         for combo in combinations(other_indices, r):
             move_indices = [driver_idx] + list(combo)
 
-            # Kiểm tra tất cả vật được chọn phải cùng bờ với người lái
             valid = True
             for idx in move_indices:
-                if state.state[idx] != state.state[driver_idx]:
+                if state.state[idx] != state.boat_side:
                     valid = False
                     break
 
             if valid:
-                # Đối với level 6, cần kiểm tra thêm ràng buộc Robot phải đi cùng người
-                if state.level == 6:
-                    moving = [characters[i] for i in move_indices]
-                    # Robot phải đi cùng người (person)
-                    if "robot" in moving and "person" not in moving:
-                        continue
-
                 new_state = state.move(move_indices)
                 if new_state:
                     moves.append(new_state)
@@ -52,126 +49,179 @@ def generate_moves(state):
 
 
 def heuristic(state):
-    """Heuristic: số lượng vật còn ở bờ trái"""
+    left_bank_count = sum(1 for i, pos in enumerate(state.state) if pos == 0)
+
+    if left_bank_count == 0:
+        return 0
+
     if state.level == 5:
-        # Level 5: ưu tiên vật có thời gian lớn
         tiger_times = state.level_data.get("tiger_times", {})
         total_time = 0
         for i, pos in enumerate(state.state):
-            if i > 0 and pos == 0:  # vật ở bờ trái
+            if i > 0 and pos == 0:
                 item_name = state.characters[i]
                 total_time += tiger_times.get(item_name, 1)
         return total_time
+
+    elif state.level == 6:
+        lazy_idx = state.characters.index("scientist1")
+        arrogant_idx = state.characters.index("scientist2")
+        brave1_idx = state.characters.index("person1")
+        brave2_idx = state.characters.index("person2")
+
+        lazy_left = 1 if state.state[lazy_idx] == 0 else 0
+        arrogant_left = 1 if state.state[arrogant_idx] == 0 else 0
+        brave1_left = 1 if state.state[brave1_idx] == 0 else 0
+        brave2_left = 1 if state.state[brave2_idx] == 0 else 0
+
+        # Heuristic đơn giản: số người chưa qua sông
+        return lazy_left + arrogant_left + brave1_left + brave2_left
+
+    elif state.level == 7:
+        bomb_idx = state.characters.index("bomb") if "bomb" in state.characters else -1
+        if bomb_idx != -1 and state.state[bomb_idx] == 0:
+            return left_bank_count * 2
+        return left_bank_count
+
     else:
-        # Heuristic đơn giản: số lượng vật còn ở bờ trái
-        return sum(1 for x in state.state if x == 0)
+        return left_bank_count
 
 
 def bfs(start):
+    start_time = time.time()
     queue = deque([(start, [])])
     visited = set()
+    states_explored = 0
 
     while queue:
         state, path = queue.popleft()
+        key = (state.state, state.boat_side)
 
-        if state.state in visited:
+        if key in visited:
             continue
-        visited.add(state.state)
+        visited.add(key)
+        states_explored += 1
 
         if state.is_goal():
-            return path + [state]
+            return path + [state], time.time() - start_time, states_explored
 
         for next_state in generate_moves(state):
             queue.append((next_state, path + [state]))
-    return None
+    return None, time.time() - start_time, states_explored
 
 
 def dfs(start):
+    start_time = time.time()
     stack = [(start, [])]
     visited = set()
+    states_explored = 0
 
     while stack:
         state, path = stack.pop()
+        key = (state.state, state.boat_side)
 
-        if state.state in visited:
+        if key in visited:
             continue
-        visited.add(state.state)
+        visited.add(key)
+        states_explored += 1
 
         if state.is_goal():
-            return path + [state]
+            return path + [state], time.time() - start_time, states_explored
 
         for next_state in generate_moves(state):
             stack.append((next_state, path + [state]))
-    return None
+    return None, time.time() - start_time, states_explored
 
 
 def ucs(start):
+    start_time = time.time()
     count = 0
     pq = [(0, count, start, [])]
     visited = {}
+    states_explored = 0
 
     while pq:
         cost, _, state, path = heapq.heappop(pq)
+        # So sánh với cost tốt nhất đã thấy
+        key = (state.state, state.boat_side)
 
-        if state.state in visited and visited[state.state] <= cost:
+        if key in visited and visited[key] <= state.cost:
             continue
-        visited[state.state] = cost
+
+        visited[key] = state.cost
+        states_explored += 1
 
         if state.is_goal():
-            return path + [state]
+            return path + [state], time.time() - start_time, states_explored
 
         for next_state in generate_moves(state):
+            new_cost = next_state.cost
             count += 1
-            heapq.heappush(pq, (next_state.cost, count, next_state, path + [state]))
-    return None
+            heapq.heappush(pq, (new_cost, count, next_state, path + [state]))
+
+    return None, time.time() - start_time, states_explored
 
 
 def greedy(start):
+    start_time = time.time()
     count = 0
     pq = [(heuristic(start), count, start, [])]
     visited = set()
+    states_explored = 0
 
     while pq:
         h, _, state, path = heapq.heappop(pq)
+        key = (state.state, state.boat_side)
 
-        if state.state in visited:
+        if key in visited:
             continue
-        visited.add(state.state)
+        visited.add(key)
+        states_explored += 1
 
         if state.is_goal():
-            return path + [state]
+            return path + [state], time.time() - start_time, states_explored
 
         for next_state in generate_moves(state):
             count += 1
             heapq.heappush(pq, (heuristic(next_state), count, next_state, path + [state]))
-    return None
+
+    return None, time.time() - start_time, states_explored
 
 
 def astar(start):
+    start_time = time.time()
     count = 0
-    pq = [(heuristic(start), count, 0, start, [])]
-    visited = {}
+    pq = [(heuristic(start), count, start, [])]
+    visited = {}  # Lưu cost tốt nhất
+    states_explored = 0
 
     while pq:
-        f, _, g, state, path = heapq.heappop(pq)
+        f, _, state, path = heapq.heappop(pq)
 
-        if state.state in visited and visited[state.state] <= g:
+        # Nếu đã có đường đi tốt hơn đến state này thì bỏ qua
+        key = (state.state, state.boat_side)
+
+        if key in visited and visited[key] <= state.cost:
             continue
-        visited[state.state] = g
+
+        visited[key] = state.cost
+        states_explored += 1
 
         if state.is_goal():
-            return path + [state]
+            return path + [state], time.time() - start_time, states_explored
 
         for next_state in generate_moves(state):
-            new_g = next_state.cost
-            new_f = new_g + heuristic(next_state)
+            g_new = next_state.cost
+            h_new = heuristic(next_state)
+            f_new = g_new + h_new
+
             count += 1
-            heapq.heappush(pq, (new_f, count, new_g, next_state, path + [state]))
-    return None
+            heapq.heappush(pq, (f_new, count, next_state, path + [state]))
+
+    return None, time.time() - start_time, states_explored
 
 
 def hint(state):
-    """Gợi ý nước đi tiếp theo"""
     sol = bfs(state)
     if sol and len(sol) > 1:
         return sol[1]
