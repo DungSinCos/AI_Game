@@ -53,7 +53,7 @@ class GameUI:
 
         # Tiêu đề
         tk.Label(menu_frame, text="🌟 CHỌN LEVEL 🌟", font=("Arial", 28, "bold"),
-                  fg="black").pack(pady=20)
+                 fg="black").pack(pady=20)
 
         # Frame chứa các ô level
         levels_frame = tk.Frame(menu_frame)
@@ -104,7 +104,7 @@ class GameUI:
         elif self.level_num == 5:
             tiger_times = level_data.get("tiger_times", {})
             time_limit = level_data.get("time_limit", 30)
-            rule_text += f"\n\n⏱️ Thông tin thêm:\n- Giới hạn thời gian: {time_limit} giây\n- Hổ nhanh: {tiger_times.get('tiger1', 1)} giây\n- Hổ trung bình 1: {tiger_times.get('tiger2', 3)} giây\n- Hổ trung bình 2: {tiger_times.get('tiger3', 6)} giây\n- Hổ chậm: {tiger_times.get('tiger4', 8)} giây\n- Hổ rất chậm: {tiger_times.get('tiger5', 12)} giây\n\nMỗi lần thuyền qua sông mất thời gian = thời gian của con hổ chậm nhất trên thuyền.\nHổ nhanh (1s,3s) và hổ chậm (8s,12s) không được ở cùng nhau nếu không có hổ 6s."
+            rule_text += f"\n\n⏱️ Thông tin thêm:\n- Giới hạn thời gian: {time_limit} giây\n- Hổ nhanh (tiger1): {tiger_times.get('tiger1', 1)} giây\n- Hổ trung bình 1 (tiger2): {tiger_times.get('tiger2', 3)} giây\n- Hổ trung bình 2 (tiger3): {tiger_times.get('tiger3', 6)} giây\n- Hổ chậm (tiger4): {tiger_times.get('tiger4', 8)} giây\n- Hổ rất chậm (tiger5): {tiger_times.get('tiger5', 12)} giây\n\nMỗi lần thuyền qua sông mất thời gian = thời gian của con hổ chậm nhất trên thuyền.\nHổ nhanh (1s,3s) và hổ chậm (8s,12s) không được ở cùng nhau nếu không có hổ 6s."
 
         messagebox.showinfo("Luật chơi", rule_text)
 
@@ -126,6 +126,12 @@ class GameUI:
         self.steps = 0
         self.start_time = time.time()
         self.time_elapsed = 0
+        self.game_over = False
+
+        # Thêm biến để theo dõi số lượt còn lại cho level 7
+        if level == 7:
+            self.move_limit = level_data.get("move_limit", 5)
+            self.remaining_moves = self.move_limit
 
         screen_w = self.root.winfo_screenwidth()
         self.left_boat = int(screen_w * 0.35)
@@ -141,7 +147,7 @@ class GameUI:
         # Giữ nguyên control panel rộng 260px như cũ
         control = tk.Frame(main, width=260, bg="#eeeeee")
         control.pack(side="right", fill="y")
-        control.pack_propagate(False)  # Giữ kích thước cố định
+        control.pack_propagate(False)
 
         self.canvas = tk.Canvas(game_frame, bg="white", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
@@ -172,6 +178,10 @@ class GameUI:
             time_limit = level_data.get("time_limit", 30)
             tk.Label(control, text=f"⏱️ Tối ưu thời gian (≤{time_limit}s)",
                      font=("Arial", 9), bg="#eeeeee", fg="green").pack(pady=2)
+        elif level == 7:
+            move_limit = level_data.get("move_limit", 5)
+            tk.Label(control, text=f"💣 Bom sẽ nổ sau {move_limit} lượt",
+                     font=("Arial", 9), bg="#eeeeee", fg="red").pack(pady=2)
 
         self.info_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
         self.info_label.pack(pady=10)
@@ -190,8 +200,6 @@ class GameUI:
         self.make_button(control, "Reset", "purple", "#dda0dd", "#ba55d3", self.start_game).pack(pady=5)
         self.make_button(control, "Menu", "brown", "#f5deb3", "#e6c68a", self.show_start).pack(pady=10)
 
-
-
         self.load_images()
         self.draw()
         self.update_timer()
@@ -206,14 +214,14 @@ class GameUI:
         return tk.Button(
             parent,
             text=text,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 10, "bold"),
             fg=fg,
             bg=bg,
             activebackground=abg,
             activeforeground=fg,
             relief="raised",
             bd=3,
-            padx=5, pady=3,
+            padx=3, pady=3,
             command=command
         )
 
@@ -242,10 +250,10 @@ class GameUI:
             self.images[char] = load(img_file, (80, 80))
 
     def get_display_name(self, char_name):
-        """Lấy tên hiển thị có chú thích chỉ cho Level 2 và 4"""
+        """Lấy tên hiển thị có chú thích"""
         level_data = levels[self.level_num]
 
-        # Chỉ hiển thị chú thích cho Level 2 và Level 4
+        # Level 2: Hiển thị tuổi cừu
         if self.level_num == 2:
             if char_name == "sheep1":
                 return "🐑 Cừu 1 tuổi"
@@ -254,7 +262,7 @@ class GameUI:
             elif char_name == "sheep3":
                 return "🐏 Cừu 3 tuổi"
 
-
+        # Level 4: Hiển thị trọng lượng thùng
         elif self.level_num == 4:
             weights = level_data.get("weights", {})
             if char_name == "box_small":
@@ -263,6 +271,24 @@ class GameUI:
                 return f"📦 Thùng trung ({weights.get('box_medium', 60)}kg)"
             elif char_name == "box_large":
                 return f"📦 Thùng lớn ({weights.get('box_large', 90)}kg)"
+
+        # Level 5: Hiển thị tên và thời gian của hổ
+        elif self.level_num == 5:
+            tiger_times = level_data.get("tiger_times", {})
+            if char_name in tiger_times:
+                time_val = tiger_times[char_name]
+                # Đặt tên hiển thị cho từng con hổ
+                if char_name == "tiger1":
+                    return f"🐯 Hổ nhanh ({time_val}s)"
+                elif char_name == "tiger2":
+                    return f"🐯 Hổ trung bình 1 ({time_val}s)"
+                elif char_name == "tiger3":
+                    return f"🐯 Hổ trung bình 2 ({time_val}s)"
+                elif char_name == "tiger4":
+                    return f"🐯 Hổ chậm ({time_val}s)"
+                elif char_name == "tiger5":
+                    return f"🐯 Hổ rất chậm ({time_val}s)"
+
         return char_name
 
     def draw(self):
@@ -282,11 +308,14 @@ class GameUI:
         # Tính toán vị trí cho các nhân vật
         n_chars = len(characters)
         if n_chars <= 4:
-            start_y = screen_h // 2 - 100
+            start_y = screen_h // 2 - 200
             y_step = 90
-        else:
-            start_y = screen_h // 2 - 150
+        elif n_chars <= 7:
+            start_y = screen_h // 2 - 250
             y_step = 80
+        else:
+            start_y = screen_h // 2 - 300
+            y_step = 70
 
         LEFT_POS = {}
         RIGHT_POS = {}
@@ -318,13 +347,17 @@ class GameUI:
             if name in self.images:
                 self.canvas.create_image(x, y, image=self.images[name], tags=name, anchor="center")
 
-            # Vẽ chú thích bên dưới (chỉ Level 2 và 4)
-            if self.level_num == 2 or self.level_num == 4:
+            # Vẽ chú thích bên dưới cho Level 2, 4, 5
+            if self.level_num in [2, 4, 5]:
                 display_name = self.get_display_name(name)
+                # Điều chỉnh vị trí text dựa trên chiều dài tên
+                text_y_offset = 55
+                if self.level_num == 5 and len(display_name) > 15:
+                    text_y_offset = 65
                 self.canvas.create_text(
-                    x, y + 55,
+                    x, y + text_y_offset,
                     text=display_name,
-                    font=("Arial", 9, "bold"),
+                    font=("Arial", 8, "bold"),
                     fill="white",
                     tags=f"{name}_label"
                 )
@@ -428,6 +461,10 @@ class GameUI:
         animate()
 
     def finish_move(self):
+        # Nếu game đã kết thúc, không cho di chuyển tiếp
+        if hasattr(self, 'game_over') and self.game_over:
+            return
+
         characters = levels[self.level_num]["characters"]
         name_to_idx = {name: i for i, name in enumerate(characters)}
         move_idx = [name_to_idx[n] for n in self.selected]
@@ -445,6 +482,11 @@ class GameUI:
         self.selected.clear()
         self.draw()
         self.steps += 1
+
+        if self.level_num == 7:
+            bomb_idx = self.state.characters.index("bomb")
+            if self.state.state[bomb_idx] == 0:  # Bomb chưa qua sông
+                self.remaining_moves = max(0, self.move_limit - self.state.moves)
         self.update_status()
 
         if self.state.is_goal():
@@ -467,39 +509,54 @@ class GameUI:
             messagebox.showinfo("Hint", "Không tìm thấy gợi ý!")
 
     def solve_bfs(self):
-        sol = bfs(self.state)
-        if sol:
-            self.animate_solution(sol)
-        else:
-            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với BFS!")
+        try:
+            sol = bfs(self.state)
+            if sol:
+                self.animate_solution(sol)
+            else:
+                messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với BFS!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"BFS gặp lỗi: {str(e)}")
 
     def solve_dfs(self):
-        sol = dfs(self.state)
-        if sol:
-            self.animate_solution(sol)
-        else:
-            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với DFS!")
+        try:
+            sol = dfs(self.state)
+            if sol:
+                self.animate_solution(sol)
+            else:
+                messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với DFS!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"DFS gặp lỗi: {str(e)}")
 
     def solve_ucs(self):
-        sol = ucs(self.state)
-        if sol:
-            self.animate_solution(sol)
-        else:
-            messagebox.showinfo("Thông báo", "UCS không tìm thấy đường!")
+        try:
+            sol = ucs(self.state)
+            if sol:
+                self.animate_solution(sol)
+            else:
+                messagebox.showinfo("Thông báo", "UCS không tìm thấy đường!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"UCS gặp lỗi: {str(e)}")
 
     def solve_greedy(self):
-        sol = greedy(self.state)
-        if sol:
-            self.animate_solution(sol)
-        else:
-            messagebox.showinfo("Thông báo", "Greedy không tìm thấy đường!")
+        try:
+            sol = greedy(self.state)
+            if sol:
+                self.animate_solution(sol)
+            else:
+                messagebox.showinfo("Thông báo", "Greedy không tìm thấy đường!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Greedy gặp lỗi: {str(e)}")
 
     def solve_astar(self):
-        sol = astar(self.state)
-        if sol:
-            self.animate_solution(sol)
-        else:
-            messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với A*!")
+        try:
+            sol = astar(self.state)
+            if sol:
+                self.animate_solution(sol)
+            else:
+                messagebox.showinfo("Thông báo", "AI không tìm thấy đường đi với A*!")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"A* gặp lỗi: {str(e)}")
 
     def animate_solution(self, sol, i=1):
         if i >= len(sol):
@@ -526,25 +583,62 @@ class GameUI:
 
     def update_status(self):
         """Cập nhật trạng thái hiển thị (thời gian, số bước)"""
+        # Nếu game đã kết thúc, không cần cập nhật nữa
+        if hasattr(self, 'game_over') and self.game_over:
+            return
+
         if self.level_num == 3:
             # Level 3: Hiển thị thời gian đã qua và thời gian còn lại
             time_limit = levels[self.level_num].get("time_limit", 60)
             time_left = max(0, time_limit - self.time_elapsed)
             status_text = f"⏱️ Thời gian: {self.time_elapsed} giây\n⏰ Còn lại: {time_left} giây\n📊 Số bước: {self.steps}"
 
-            # Kiểm tra hết giờ
-            if self.time_elapsed >= time_limit and not self.state.is_goal():
+            # Kiểm tra hết giờ - chỉ thông báo một lần
+            if self.time_elapsed >= time_limit and not self.state.is_goal() and not self.game_over:
+                self.game_over = True
                 messagebox.showinfo("Thất bại", f"Hết giờ! Bạn đã thua Level {self.level_num}!")
                 self.show_level_menu()
                 return
+
+        elif self.level_num == 5:
+            # Level 5: Hiển thị tổng thời gian di chuyển
+            status_text = f"⏱️ Thời gian thực: {self.time_elapsed} giây\n🐯 Tổng thời gian di chuyển: {self.state.cost} giây\n📊 Số bước: {self.steps}"
+
+            # Kiểm tra nếu tổng thời gian di chuyển vượt quá giới hạn
+            time_limit = levels[self.level_num].get("time_limit", 30)
+            if self.state.cost > time_limit and not self.state.is_goal() and not self.game_over:
+                self.game_over = True
+                messagebox.showinfo("Thất bại",
+                                    f"Tổng thời gian di chuyển {self.state.cost} giây vượt quá giới hạn {time_limit} giây!")
+                self.show_level_menu()
+                return
+
+        elif self.level_num == 7:
+            # Level 7: Hiển thị số lượt còn lại
+            # Tìm vị trí của bomb
+            bomb_idx = self.state.characters.index("bomb")
+            bomb_side = self.state.state[bomb_idx]
+
+            # Nếu bomb chưa qua sông (bờ trái), tính số lượt còn lại
+            if bomb_side == 0:
+                remaining = max(0, self.move_limit - self.state.moves)
+                status_text = f"💣 Bom ở bờ trái\n⏰ Số lượt còn lại: {remaining}/{self.move_limit}\n📊 Số bước: {self.steps}"
+
+                # Kiểm tra nếu hết lượt và bomb chưa qua sông
+                if self.state.moves >= self.move_limit and not self.state.is_goal() and not self.game_over:
+                    self.game_over = True
+                    messagebox.showinfo("Thất bại", f"Bom đã nổ! Bạn đã thua Level {self.level_num}!")
+                    self.show_level_menu()
+                    return
+            else:
+                # Bomb đã qua sông, hiển thị bình thường
+                status_text = f"💣 Bom đã qua sông an toàn\n📊 Số bước: {self.steps}"
+
         else:
             # Các level khác
             status_text = f"⏱️ Thời gian: {self.time_elapsed} giây\n📊 Số bước: {self.steps}"
-            if self.level_num == 5:
-                status_text += f"\n🐯 Tổng thời gian di chuyển: {self.state.cost} giây"
 
         self.status_label.config(text=status_text)
-
 
     def clear(self):
         for w in self.frame.winfo_children():

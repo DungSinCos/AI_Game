@@ -94,6 +94,10 @@ class GameState:
             t = state[idx["tiger"]]
             b = state[idx["bomb"]]
 
+            # 🤖 Robot phải đi cùng người (ở cùng bờ)
+            if r != p:
+                return False
+
             for shore in [0, 1]:
 
                 # 🐺 Sói ăn cừu
@@ -117,10 +121,14 @@ class GameState:
             s = state[idx["sheep"]]
             b = state[idx["bomb"]]
 
+            # Sói ăn cừu
             if w == s and p != w:
                 return False
 
+            # Kiểm tra bom chưa qua sông nhưng đã hết lượt
+            # Lưu ý: self.moves là số lượt đã thực hiện, không phải số lượt của state mới
             limit = self.level_data.get("move_limit", 5)
+            # Nếu bom vẫn ở bờ trái (0) và số lượt đã thực hiện >= limit thì thua
             if b == 0 and self.moves >= limit:
                 return False
 
@@ -187,10 +195,30 @@ class GameState:
             self.level_data
         )
 
+        # ===== Tính toán cost cho level 5 =====
+        if self.level == 5:
+            tiger_times = self.level_data.get("tiger_times", {})
+            boat_side = self.state[0]
+
+            # Tìm các con hổ trên thuyền (không bao gồm người)
+            tigers_on_boat = []
+            for i in move_indices:
+                if i != 0 and chars[i].startswith("tiger"):
+                    tigers_on_boat.append(chars[i])
+
+            # Tính thời gian di chuyển = thời gian của hổ chậm nhất trên thuyền
+            move_time = 0
+            if tigers_on_boat:
+                max_time = max(tiger_times[tiger] for tiger in tigers_on_boat)
+                move_time = max_time
+            else:
+                move_time = 0
+
+            # Cộng dồn vào cost
+            new_state_obj.cost = self.cost + move_time
+            new_state_obj.moves = self.moves + 1
+        else:
+            new_state_obj.cost = self.cost
+            new_state_obj.moves = self.moves + 1
+
         return new_state_obj
-
-    def __hash__(self):
-        return hash(self.state)
-
-    def __eq__(self, other):
-        return self.state == other.state

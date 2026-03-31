@@ -8,34 +8,45 @@ def generate_moves(state):
     moves = []
     characters = state.characters
 
-    # Person luôn đi
-    person_idx = 0
+    # Tìm người lái thuyền (person hoặc scientist)
+    driver_idx = None
+    if "person" in characters:
+        driver_idx = characters.index("person")
+    elif "scientist" in characters:
+        driver_idx = characters.index("scientist")
 
-    # Các tổ hợp vật có thể chở (1 hoặc nhiều tùy boat_capacity)
-    # Với mỗi vật có thể chọn hoặc không
-    other_indices = list(range(1, len(characters)))
+    if driver_idx is None:
+        return moves
 
-    # Tạo tất cả tổ hợp vật (subset) với kích thước từ 1 đến boat_capacity-1
-    for r in range(1, state.boat_capacity):
-        from itertools import combinations
+    # Các vật có thể chở (không bao gồm người lái)
+    other_indices = [i for i in range(len(characters)) if i != driver_idx]
+
+    # Tạo tất cả tổ hợp vật với kích thước từ 0 đến boat_capacity-1
+    # (0 nghĩa là chỉ chở người lái)
+    from itertools import combinations
+
+    for r in range(0, state.boat_capacity):
         for combo in combinations(other_indices, r):
-            move_indices = [person_idx] + list(combo)
-            # Kiểm tra vật được chọn phải cùng bờ với người
+            move_indices = [driver_idx] + list(combo)
+
+            # Kiểm tra tất cả vật được chọn phải cùng bờ với người lái
             valid = True
             for idx in move_indices:
-                if state.state[idx] != state.state[person_idx]:
+                if state.state[idx] != state.state[driver_idx]:
                     valid = False
                     break
+
             if valid:
+                # Đối với level 6, cần kiểm tra thêm ràng buộc Robot phải đi cùng người
+                if state.level == 6:
+                    moving = [characters[i] for i in move_indices]
+                    # Robot phải đi cùng người (person)
+                    if "robot" in moving and "person" not in moving:
+                        continue
+
                 new_state = state.move(move_indices)
                 if new_state:
                     moves.append(new_state)
-
-    # Trường hợp chỉ chở mình người
-    move_indices = [person_idx]
-    new_state = state.move(move_indices)
-    if new_state:
-        moves.append(new_state)
 
     return moves
 
@@ -52,6 +63,7 @@ def heuristic(state):
                 total_time += tiger_times.get(item_name, 1)
         return total_time
     else:
+        # Heuristic đơn giản: số lượng vật còn ở bờ trái
         return sum(1 for x in state.state if x == 0)
 
 
