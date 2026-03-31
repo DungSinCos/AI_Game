@@ -16,12 +16,19 @@ levels = {
     },
 
     3: {
-        "name": "Nhà khoa học và bom",
-        "description": "Bom phải đi cùng nhà khoa học.",
-        "characters": ["person", "scientist", "bom", "robot1", "robot2"],
-        "boat_capacity": 2,
-        "rules": {"type": "danger"}
-    },
+    "name": "Đưa tất cả qua sông",
+    "description": "Người có thể đưa bất kỳ ai qua sông. Chỉ cần đưa tất cả qua bờ bên kia, không có ràng buộc nào khác.",
+    "characters": ["person", "scientist", "bom", "robot1", "robot2"],
+    "boat_capacity": 2,
+    "rules": {"type": "simple"},
+    "display_names": {
+        "person": "🧑 Người",
+        "scientist": "👨‍🔬 Nhà khoa học",
+        "bom": "💣 Bom",
+        "robot1": "🤖 Robot 1",
+        "robot2": "🤖 Robot 2"
+    }
+},
 
     4: {
         "name": "Những chiếc thùng",
@@ -121,6 +128,50 @@ levels = {
         "sheep": "🐑 Cừu",
         "bomb": "💣 Bom"
     }
+},
+   9: {
+    "name": "Robot và Bom (Nhẹ nhàng)",
+    "description": "Đưa tất cả nhân vật qua sông. Robot không được đi một mình, Bom đi tự do.",
+
+    "characters": [
+        "person",
+        "robot",
+        "bomb1",
+        "bomb2"
+    ],
+
+    "boat_capacity": 2,
+
+    "rules": {
+        "type": "robot_light_rule"
+    },
+
+    "display_names": {
+        "person": "🧑 Người",
+        "robot": "🤖 Robot",
+        "bomb1": "💣 Bom 1",
+        "bomb2": "💣 Bom 2"
+    }
+},
+    10: {
+    "name": "Luật tự nhiên",
+    "description": "Nếu số hổ nhiều hơn số sói ở bất kỳ bờ nào, sói sẽ bị ăn.",
+
+    "characters": ["person", "tiger1", "tiger2", "wolf1", "wolf2"],
+
+    "boat_capacity": 2,
+
+    "rules": {
+        "type": "pure_balance"
+    },
+
+    "display_names": {
+        "person": "🧑 Người lái",
+        "tiger1": "🐯 Hổ 1",
+        "tiger2": "🐯 Hổ 2",
+        "wolf1": "🐺 Sói 1",
+        "wolf2": "🐺 Sói 2"
+    }
 }
 }
 # Map nhân vật với ảnh 
@@ -146,6 +197,20 @@ IMAGE_MAP = {
     "box_medium": "box.png",
     "box_large": "box.png",
 
+    "box1": "box.png",
+    "box2": "box.png",
+    "box3": "box.png",
+    "box4": "box.png",
+    "person": "person.png",
+
+    "tiger": "tiger.png",
+    "tiger1": "tiger.png",
+    "tiger2": "tiger.png",
+
+    "wolf": "wolf.png",
+    "wolf1": "wolf.png",
+    "wolf2": "wolf.png",
+    
     "tiger": "tiger.png",
     "tiger1": "tiger.png",
     "tiger2": "tiger.png",
