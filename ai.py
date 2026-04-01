@@ -103,11 +103,15 @@ def bfs(start):
         states_explored += 1
 
         if state.is_goal():
-            return path + [state], time.time() - start_time, states_explored
+            solution_path = path + [state]
+            exec_time = time.time() - start_time
+            solution_length = len(solution_path) - 1  # Số bước
+            cost = state.cost  # Chi phí
+            return solution_path, exec_time, states_explored, solution_length, cost
 
         for next_state in generate_moves(state):
             queue.append((next_state, path + [state]))
-    return None, time.time() - start_time, states_explored
+    return None, time.time() - start_time, states_explored, None, None
 
 
 def dfs(start):
@@ -126,11 +130,15 @@ def dfs(start):
         states_explored += 1
 
         if state.is_goal():
-            return path + [state], time.time() - start_time, states_explored
+            solution_path = path + [state]
+            exec_time = time.time() - start_time
+            solution_length = len(solution_path) - 1
+            cost = state.cost
+            return solution_path, exec_time, states_explored, solution_length, cost
 
         for next_state in generate_moves(state):
             stack.append((next_state, path + [state]))
-    return None, time.time() - start_time, states_explored
+    return None, time.time() - start_time, states_explored, None, None
 
 
 def ucs(start):
@@ -142,7 +150,6 @@ def ucs(start):
 
     while pq:
         cost, _, state, path = heapq.heappop(pq)
-        # So sánh với cost tốt nhất đã thấy
         key = (state.state, state.boat_side)
 
         if key in visited and visited[key] <= state.cost:
@@ -152,14 +159,17 @@ def ucs(start):
         states_explored += 1
 
         if state.is_goal():
-            return path + [state], time.time() - start_time, states_explored
+            solution_path = path + [state]
+            exec_time = time.time() - start_time
+            solution_length = len(solution_path) - 1
+            return solution_path, exec_time, states_explored, solution_length, state.cost
 
         for next_state in generate_moves(state):
             new_cost = next_state.cost
             count += 1
             heapq.heappush(pq, (new_cost, count, next_state, path + [state]))
 
-    return None, time.time() - start_time, states_explored
+    return None, time.time() - start_time, states_explored, None, None
 
 
 def greedy(start):
@@ -179,26 +189,28 @@ def greedy(start):
         states_explored += 1
 
         if state.is_goal():
-            return path + [state], time.time() - start_time, states_explored
+            solution_path = path + [state]
+            exec_time = time.time() - start_time
+            solution_length = len(solution_path) - 1
+            cost = state.cost
+            return solution_path, exec_time, states_explored, solution_length, cost
 
         for next_state in generate_moves(state):
             count += 1
             heapq.heappush(pq, (heuristic(next_state), count, next_state, path + [state]))
 
-    return None, time.time() - start_time, states_explored
+    return None, time.time() - start_time, states_explored, None, None
 
 
 def astar(start):
     start_time = time.time()
     count = 0
     pq = [(heuristic(start), count, start, [])]
-    visited = {}  # Lưu cost tốt nhất
+    visited = {}
     states_explored = 0
 
     while pq:
         f, _, state, path = heapq.heappop(pq)
-
-        # Nếu đã có đường đi tốt hơn đến state này thì bỏ qua
         key = (state.state, state.boat_side)
 
         if key in visited and visited[key] <= state.cost:
@@ -208,7 +220,10 @@ def astar(start):
         states_explored += 1
 
         if state.is_goal():
-            return path + [state], time.time() - start_time, states_explored
+            solution_path = path + [state]
+            exec_time = time.time() - start_time
+            solution_length = len(solution_path) - 1
+            return solution_path, exec_time, states_explored, solution_length, state.cost
 
         for next_state in generate_moves(state):
             g_new = next_state.cost
@@ -218,11 +233,11 @@ def astar(start):
             count += 1
             heapq.heappush(pq, (f_new, count, next_state, path + [state]))
 
-    return None, time.time() - start_time, states_explored
+    return None, time.time() - start_time, states_explored, None, None
 
 
 def hint(state):
-    path, _, _ = bfs(state)
+    path, _, _, _, _ = bfs(state)
 
     if path and len(path) > 1:
         return path[1]

@@ -1,10 +1,12 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox,ttk
 from PIL import Image, ImageTk
 import time
 from game_logic import GameState
 from ai import bfs, dfs, astar, hint, ucs, greedy
 from levels import levels, IMAGE_MAP
+from History import history_manager
+
 
 
 class GameUI:
@@ -12,6 +14,7 @@ class GameUI:
         self.root = root
         self.frame = tk.Frame(root)
         self.frame.pack(fill="both", expand=True)
+        self.history_manager = history_manager
         self.show_start()
 
     def show_start(self):
@@ -116,11 +119,426 @@ class GameUI:
             play_btn.pack(pady=10)
 
         # Nút quay lại - chữ màu đen
-        back_btn = tk.Button(menu_frame, text="← Quay lại", command=self.show_start,
+        button_frame = tk.Frame(menu_frame, bg="#90EE90")
+        button_frame.pack(pady=25)
+
+        back_btn = tk.Button(button_frame, text="← Quay lại", command=self.show_start,
                              font=("Arial", 14, "bold"), bg="#F4A460", fg="black",
                              padx=25, pady=10, bd=0, cursor="hand2")
-        back_btn.pack(pady=25)
+        back_btn.pack(side="left", padx=10)
 
+        # Thêm nút xem lịch sử
+        history_btn = tk.Button(button_frame, text="📜 Xem lịch sử", command=self.show_history,
+                                font=("Arial", 14, "bold"), bg="#4CAF50", fg="white",
+                                padx=25, pady=10, bd=0, cursor="hand2")
+        history_btn.pack(side="left", padx=10)
+
+    def show_history(self):
+        """Hiển thị cửa sổ lịch sử chạy thuật toán (tổng quát, không cần level)"""
+        import tkinter as tk
+        from tkinter import ttk
+
+        history_window = tk.Toplevel(self.root)
+        history_window.title("Lịch sử chạy thuật toán")
+        history_window.geometry("900x550")
+        history_window.configure(bg="#f0f0f0")
+
+        # Center window
+        history_window.update_idletasks()
+        x = (history_window.winfo_screenwidth() // 2) - (900 // 2)
+        y = (history_window.winfo_screenheight() // 2) - (550 // 2)
+        history_window.geometry(f"900x550+{x}+{y}")
+
+        # Frame chính
+        main_frame = tk.Frame(history_window, bg="#f0f0f0")
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Tiêu đề
+        tk.Label(main_frame, text="📊 LỊCH SỬ CHẠY THUẬT TOÁN",
+                 font=("Arial", 16, "bold"), bg="#f0f0f0", fg="#333").pack(pady=10)
+
+        # Frame lọc
+        filter_frame = tk.Frame(main_frame, bg="#f0f0f0")
+        filter_frame.pack(fill="x", pady=5)
+
+        tk.Label(filter_frame, text="Lọc theo Level:", bg="#f0f0f0").pack(side="left", padx=5)
+
+        level_var = tk.StringVar(value="Tất cả")
+        level_combo = ttk.Combobox(filter_frame, textvariable=level_var,
+                                   values=["Tất cả"] + list(range(1, 11)),
+                                   width=10, state="readonly")
+        level_combo.pack(side="left", padx=5)
+
+        tk.Label(filter_frame, text="Thuật toán:", bg="#f0f0f0").pack(side="left", padx=5)
+
+        algo_var = tk.StringVar(value="Tất cả")
+        algo_combo = ttk.Combobox(filter_frame, textvariable=algo_var,
+                                  values=["Tất cả", "BFS", "DFS", "UCS", "Greedy", "A*"],
+                                  width=10, state="readonly")
+        algo_combo.pack(side="left", padx=5)
+
+        # Frame chứa Treeview và Scrollbar
+        tree_frame = tk.Frame(main_frame)
+        tree_frame.pack(fill="both", expand=True, pady=10)
+
+        # Tạo scrollbar
+        scrollbar = tk.Scrollbar(tree_frame)
+        scrollbar.pack(side="right", fill="y")
+
+        # Tạo Treeview
+        columns = ("ID", "Thời gian", "Level", "Tên Level", "Thuật toán",
+                   "Thời gian chạy (s)", "Số trạng thái", "Số bước", "Chi phí")
+
+        tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
+                            yscrollcommand=scrollbar.set, height=18)
+        scrollbar.config(command=tree.yview)
+
+        # Định nghĩa các cột
+        tree.heading("ID", text="ID")
+        tree.heading("Thời gian", text="Thời gian")
+        tree.heading("Level", text="Level")
+        tree.heading("Tên Level", text="Tên Level")
+        tree.heading("Thuật toán", text="Thuật toán")
+        tree.heading("Thời gian chạy (s)", text="Thời gian chạy (s)")
+        tree.heading("Số trạng thái", text="Số trạng thái")
+        tree.heading("Số bước", text="Số bước")
+        tree.heading("Chi phí", text="Chi phí")
+
+        # Đặt độ rộng cột
+        tree.column("ID", width=50, anchor="center")
+        tree.column("Thời gian", width=150, anchor="center")
+        tree.column("Level", width=60, anchor="center")
+        tree.column("Tên Level", width=200, anchor="w")
+        tree.column("Thuật toán", width=80, anchor="center")
+        tree.column("Thời gian chạy (s)", width=120, anchor="center")
+        tree.column("Số trạng thái", width=100, anchor="center")
+        tree.column("Số bước", width=80, anchor="center")
+        tree.column("Chi phí", width=80, anchor="center")
+
+        tree.pack(side="left", fill="both", expand=True)
+
+        # Frame thống kê
+        stat_frame = tk.LabelFrame(main_frame, text="📈 Thống kê hiệu suất",
+                                   bg="#f0f0f0", font=("Arial", 11, "bold"))
+        stat_frame.pack(fill="x", pady=10)
+
+        # Frame nút điều khiển
+        btn_frame = tk.Frame(main_frame, bg="#f0f0f0")
+        btn_frame.pack(fill="x", pady=5)
+
+        def refresh_history():
+            """Làm mới danh sách lịch sử"""
+            # Xóa dữ liệu cũ
+            for item in tree.get_children():
+                tree.delete(item)
+
+            # Lấy dữ liệu với bộ lọc
+            level_filter = None if level_var.get() == "Tất cả" else int(level_var.get())
+            algo_filter = None if algo_var.get() == "Tất cả" else algo_var.get()
+
+            history = self.history_manager.get_history(level=level_filter, algorithm=algo_filter)
+
+            # Thêm dữ liệu vào tree
+            for record in reversed(history):  # Hiển thị mới nhất lên đầu
+                values = (
+                    record["id"],
+                    record["timestamp"],
+                    record["level"],
+                    record["level_name"][:30],
+                    record["algorithm"],
+                    f"{record['execution_time']:.6f}",
+                    record["states_explored"],
+                    record["solution_length"] if record["solution_length"] else "-",
+                    record["cost"] if record["cost"] else "-"
+                )
+                tree.insert("", "end", values=values)
+
+            # Cập nhật thống kê
+            update_statistics()
+
+        def update_statistics():
+            """Cập nhật thống kê"""
+            level_filter = None if level_var.get() == "Tất cả" else int(level_var.get())
+            stats = self.history_manager.get_statistics(level=level_filter)
+
+            # Xóa text cũ
+            for widget in stat_frame.winfo_children():
+                if widget != stat_frame:
+                    widget.destroy()
+                else:
+                    for child in widget.winfo_children():
+                        child.destroy()
+
+            if not stats:
+                tk.Label(stat_frame, text="Chưa có dữ liệu thống kê",
+                         bg="#f0f0f0", fg="gray").pack(pady=5)
+                return
+
+            # Tạo bảng thống kê
+            row = 0
+            for algo, data in stats.items():
+                algo_color = {"BFS": "#3498db", "DFS": "#e74c3c", "UCS": "#2ecc71",
+                              "Greedy": "#f39c12", "A*": "#9b59b6"}.get(algo, "#333")
+
+                tk.Label(stat_frame, text=f"📊 {algo}:", font=("Arial", 10, "bold"),
+                         bg="#f0f0f0", fg=algo_color).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+
+                stats_text = f"Số lần chạy: {data['count']} | "
+                stats_text += f"TB: {data['avg_time']:.4f}s | "
+                stats_text += f"Nhanh nhất: {data['min_time']:.4f}s | "
+                stats_text += f"Chậm nhất: {data['max_time']:.4f}s | "
+                stats_text += f"TB số node: {data['avg_states']:.0f}"
+
+                tk.Label(stat_frame, text=stats_text, font=("Arial", 9),
+                         bg="#f0f0f0", fg="#555", wraplength=500, justify="left"
+                         ).grid(row=row, column=1, sticky="w", padx=5, pady=2)
+                row += 1
+
+        # Các nút điều khiển (chỉ giữ lại nút cần thiết)
+        tk.Button(btn_frame, text="🔄 Làm mới", command=refresh_history,
+                  bg="#3498db", fg="white", padx=20, pady=5, font=("Arial", 10)).pack(side="left", padx=10)
+
+        tk.Button(btn_frame, text="🗑️ Xóa lịch sử",
+                  command=lambda: self.clear_history(history_window, refresh_history),
+                  bg="#e74c3c", fg="white", padx=20, pady=5, font=("Arial", 10)).pack(side="left", padx=10)
+
+        tk.Button(btn_frame, text="❌ Đóng", command=history_window.destroy,
+                  bg="#95a5a6", fg="white", padx=20, pady=5, font=("Arial", 10)).pack(side="right", padx=10)
+
+        # Gắn sự kiện cho combobox
+        level_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+        algo_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+
+        # Load dữ liệu ban đầu
+        refresh_history()
+
+        def update_statistics():
+            """Cập nhật thống kê"""
+            level_filter = None if level_var.get() == "Tất cả" else int(level_var.get())
+            stats = self.history_manager.get_statistics(level=level_filter)
+
+            # Xóa text cũ
+            for widget in stat_frame.winfo_children():
+                widget.destroy()
+
+            if not stats:
+                tk.Label(stat_frame, text="Chưa có dữ liệu thống kê",
+                         bg="#f0f0f0", fg="gray").pack()
+                return
+
+            # Tạo bảng thống kê
+            row = 0
+            for algo, data in stats.items():
+                algo_color = {"BFS": "#3498db", "DFS": "#e74c3c", "UCS": "#2ecc71",
+                              "Greedy": "#f39c12", "A*": "#9b59b6"}.get(algo, "#333")
+
+                tk.Label(stat_frame, text=f"📊 {algo}:", font=("Arial", 10, "bold"),
+                         bg="#f0f0f0", fg=algo_color).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+
+                stats_text = f"Số lần chạy: {data['count']} | "
+                stats_text += f"TB: {data['avg_time']:.6f}s | "
+                stats_text += f"Nhanh nhất: {data['min_time']:.6f}s | "
+                stats_text += f"Chậm nhất: {data['max_time']:.6f}s | "
+                stats_text += f"TB số trạng thái: {data['avg_states']:.0f}"
+
+                tk.Label(stat_frame, text=stats_text, font=("Arial", 9),
+                         bg="#f0f0f0", fg="#555", wraplength=500, justify="left"
+                         ).grid(row=row, column=1, sticky="w", padx=5, pady=2)
+                row += 1
+
+        # Frame thống kê
+        stat_frame = tk.LabelFrame(main_frame, text="📈 Thống kê hiệu suất",
+                                   bg="#f0f0f0", font=("Arial", 11, "bold"))
+        stat_frame.pack(fill="x", pady=10)
+
+        # Các nút điều khiển
+        tk.Button(btn_frame, text="🔄 Làm mới", command=refresh_history,
+                  bg="#3498db", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="🗑️ Xóa lịch sử",
+                  command=lambda: self.clear_history(history_window, refresh_history),
+                  bg="#e74c3c", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="📋 Xuất CSV",
+                  command=lambda: self.export_history_csv(),
+                  bg="#2ecc71", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="❌ Đóng", command=history_window.destroy,
+                  bg="#95a5a6", fg="white", padx=15, pady=5).pack(side="right", padx=5)
+
+        # Gắn sự kiện cho combobox
+        level_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+        algo_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+
+        # Load dữ liệu ban đầu
+        refresh_history()
+
+        def update_statistics():
+            """Cập nhật thống kê"""
+            level_filter = None if level_var.get() == "Tất cả" else int(level_var.get())
+            stats = self.history_manager.get_statistics(level=level_filter)
+
+            # Xóa text cũ
+            for widget in stat_frame.winfo_children():
+                widget.destroy()
+
+            if not stats:
+                tk.Label(stat_frame, text="Chưa có dữ liệu thống kê",
+                         bg="#f0f0f0", fg="gray").pack()
+                return
+
+            # Tạo bảng thống kê
+            row = 0
+            for algo, data in stats.items():
+                algo_color = {"BFS": "#3498db", "DFS": "#e74c3c", "UCS": "#2ecc71",
+                              "Greedy": "#f39c12", "A*": "#9b59b6"}.get(algo, "#333")
+
+                tk.Label(stat_frame, text=f"📊 {algo}:", font=("Arial", 10, "bold"),
+                         bg="#f0f0f0", fg=algo_color).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+
+                stats_text = f"Số lần chạy: {data['count']} | "
+                stats_text += f"TB: {data['avg_time']:.6f}s | "
+                stats_text += f"Nhanh nhất: {data['min_time']:.6f}s | "
+                stats_text += f"Chậm nhất: {data['max_time']:.6f}s | "
+                stats_text += f"TB số trạng thái: {data['avg_states']:.0f}"
+
+                tk.Label(stat_frame, text=stats_text, font=("Arial", 9),
+                         bg="#f0f0f0", fg="#555", wraplength=500, justify="left"
+                         ).grid(row=row, column=1, sticky="w", padx=5, pady=2)
+                row += 1
+
+        # Frame thống kê
+        stat_frame = tk.LabelFrame(main_frame, text="📈 Thống kê hiệu suất",
+                                   bg="#f0f0f0", font=("Arial", 11, "bold"))
+        stat_frame.pack(fill="x", pady=10)
+
+        # Các nút điều khiển
+        tk.Button(btn_frame, text="🔄 Làm mới", command=refresh_history,
+                  bg="#3498db", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="🗑️ Xóa lịch sử",
+                  command=lambda: self.clear_history(history_window, refresh_history),
+                  bg="#e74c3c", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="📋 Xuất CSV",
+                  command=lambda: self.export_history_csv(),
+                  bg="#2ecc71", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="❌ Đóng", command=history_window.destroy,
+                  bg="#95a5a6", fg="white", padx=15, pady=5).pack(side="right", padx=5)
+
+        # Gắn sự kiện cho combobox
+        level_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+        algo_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+
+        # Load dữ liệu ban đầu
+        refresh_history()
+
+
+
+        def update_statistics():
+            """Cập nhật thống kê"""
+            level_filter = None if level_var.get() == "Tất cả" else int(level_var.get())
+            stats = self.history_manager.get_statistics(level=level_filter)
+
+            # Xóa text cũ
+            for widget in stat_frame.winfo_children():
+                widget.destroy()
+
+            if not stats:
+                tk.Label(stat_frame, text="Chưa có dữ liệu thống kê",
+                         bg="#f0f0f0", fg="gray").pack()
+                return
+
+            # Tạo bảng thống kê
+            row = 0
+            for algo, data in stats.items():
+                algo_color = {"BFS": "#3498db", "DFS": "#e74c3c", "UCS": "#2ecc71",
+                              "Greedy": "#f39c12", "A*": "#9b59b6"}.get(algo, "#333")
+
+                tk.Label(stat_frame, text=f"📊 {algo}:", font=("Arial", 10, "bold"),
+                         bg="#f0f0f0", fg=algo_color).grid(row=row, column=0, sticky="w", padx=5, pady=2)
+
+                stats_text = f"Số lần chạy: {data['count']} | "
+                stats_text += f"TB: {data['avg_time']:.6f}s | "
+                stats_text += f"Nhanh nhất: {data['min_time']:.6f}s | "
+                stats_text += f"Chậm nhất: {data['max_time']:.6f}s | "
+                stats_text += f"TB số trạng thái: {data['avg_states']:.0f}"
+
+                tk.Label(stat_frame, text=stats_text, font=("Arial", 9),
+                         bg="#f0f0f0", fg="#555", wraplength=500, justify="left"
+                         ).grid(row=row, column=1, sticky="w", padx=5, pady=2)
+                row += 1
+
+        # Frame thống kê
+        stat_frame = tk.LabelFrame(main_frame, text="📈 Thống kê hiệu suất",
+                                   bg="#f0f0f0", font=("Arial", 11, "bold"))
+        stat_frame.pack(fill="x", pady=10)
+
+        # Các nút điều khiển
+        tk.Button(btn_frame, text="🔄 Làm mới", command=refresh_history,
+                  bg="#3498db", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="🗑️ Xóa lịch sử",
+                  command=lambda: self.clear_history(history_window, refresh_history),
+                  bg="#e74c3c", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="📋 Xuất CSV",
+                  command=lambda: self.export_history_csv(),
+                  bg="#2ecc71", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        tk.Button(btn_frame, text="❌ Đóng", command=history_window.destroy,
+                  bg="#95a5a6", fg="white", padx=15, pady=5).pack(side="right", padx=5)
+
+        # Gắn sự kiện cho combobox
+        level_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+        algo_combo.bind("<<ComboboxSelected>>", lambda e: refresh_history())
+
+        # Load dữ liệu ban đầu
+        refresh_history()
+
+        # Import ttk
+        from tkinter import ttk
+
+    def clear_history(self, window, refresh_callback):
+        """Xóa lịch sử"""
+        if messagebox.askyesno("Xác nhận", "Bạn có chắc muốn xóa toàn bộ lịch sử?"):
+            self.history_manager.clear_history()
+            refresh_callback()
+            messagebox.showinfo("Thành công", "Đã xóa lịch sử!")
+
+    def export_history_csv(self):
+        """Xuất lịch sử ra file CSV"""
+        import csv
+        from datetime import datetime
+
+        filename = f"algorithm_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        try:
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                # Header
+                writer.writerow(["ID", "Thời gian", "Level", "Tên Level", "Thuật toán",
+                                 "Thời gian chạy (s)", "Số trạng thái", "Số bước", "Chi phí"])
+
+                # Data
+                for record in self.history_manager.history:
+                    writer.writerow([
+                        record["id"],
+                        record["timestamp"],
+                        record["level"],
+                        record["level_name"],
+                        record["algorithm"],
+                        record["execution_time"],
+                        record["states_explored"],
+
+                        record["solution_length"] if record["solution_length"] else "",
+                        record["cost"] if record["cost"] else ""
+                    ])
+
+            messagebox.showinfo("Thành công", f"Đã xuất lịch sử ra file:\n{filename}")
+        except Exception as e:
+            messagebox.showerror("Lỗi", f"Không thể xuất file: {e}")
     def show_rule(self):
         level_data = levels[self.level_num]
         rule_text = level_data.get("description", "Không có luật cụ thể cho level này.")
@@ -194,6 +612,7 @@ Dũng cảm (person1, person2):
         game_frame = tk.Frame(main)
         game_frame.pack(side="left", fill="both", expand=True)
 
+        # Khung điều khiển bên phải (chỉ có control, không có lịch sử cố định)
         control = tk.Frame(main, width=260, bg="#eeeeee")
         control.pack(side="right", fill="y")
         control.pack_propagate(False)
@@ -243,20 +662,279 @@ Dũng cảm (person1, person2):
         self.status_label = tk.Label(control, text="", bg="#eeeeee", justify="left")
         self.status_label.pack(pady=10)
 
-        self.make_button(control, "Rule", "black", "#d3d3d3", "#c0c0c0", self.show_rule).pack(pady=5)
-        self.make_button(control, "Chở", "black", "#f0e68c", "#e6d96c", self.move_boat).pack(pady=5)
-        self.make_button(control, "Hint", "darkorange", "#ffe4b5", "#ffdead", self.use_hint).pack(pady=5)
-        self.make_button(control, "BFS", "darkblue", "#add8e6", "#87ceeb", self.solve_bfs).pack(pady=5)
-        self.make_button(control, "DFS", "darkred", "#f08080", "#cd5c5c", self.solve_dfs).pack(pady=5)
-        self.make_button(control, "A*", "darkgreen", "#90ee90", "#66cdaa", self.solve_astar).pack(pady=5)
-        self.make_button(control, "UCS", "darkcyan", "#e0ffff", "#afeeee", self.solve_ucs).pack(pady=5)
-        self.make_button(control, "Greedy", "darkorange", "#ffebcd", "#ffdead", self.solve_greedy).pack(pady=5)
-        self.make_button(control, "Reset", "purple", "#dda0dd", "#ba55d3", self.start_game).pack(pady=5)
-        self.make_button(control, "Menu", "brown", "#f5deb3", "#e6c68a", self.show_start).pack(pady=10)
+        # Frame cho các nút (sắp xếp thành 3 hàng cho gọn)
+        buttons_frame1 = tk.Frame(control, bg="#eeeeee")
+        buttons_frame1.pack(pady=5)
+
+        buttons_frame2 = tk.Frame(control, bg="#eeeeee")
+        buttons_frame2.pack(pady=5)
+
+        buttons_frame3 = tk.Frame(control, bg="#eeeeee")
+        buttons_frame3.pack(pady=5)
+
+        buttons_frame4 = tk.Frame(control, bg="#eeeeee")
+        buttons_frame4.pack(pady=5)
+
+        # Hàng 1: Rule, Chở, Hint
+        self.make_button(buttons_frame1, "Rule", "black", "#d3d3d3", "#c0c0c0", self.show_rule).pack(side="left",
+                                                                                                     padx=3)
+        self.make_button(buttons_frame1, "Chở", "black", "#f0e68c", "#e6d96c", self.move_boat).pack(side="left", padx=3)
+        self.make_button(buttons_frame1, "Hint", "darkorange", "#ffe4b5", "#ffdead", self.use_hint).pack(side="left",
+                                                                                                         padx=3)
+
+        # Hàng 2: BFS, DFS, A*
+        self.make_button(buttons_frame2, "BFS", "darkblue", "#add8e6", "#87ceeb", self.solve_bfs).pack(side="left",
+                                                                                                       padx=3)
+        self.make_button(buttons_frame2, "DFS", "darkred", "#f08080", "#cd5c5c", self.solve_dfs).pack(side="left",
+                                                                                                      padx=3)
+        self.make_button(buttons_frame2, "A*", "darkgreen", "#90ee90", "#66cdaa", self.solve_astar).pack(side="left",
+                                                                                                         padx=3)
+
+        # Hàng 3: UCS, Greedy, Reset
+        self.make_button(buttons_frame3, "UCS", "darkcyan", "#e0ffff", "#afeeee", self.solve_ucs).pack(side="left",
+                                                                                                       padx=3)
+        self.make_button(buttons_frame3, "Greedy", "darkorange", "#ffebcd", "#ffdead", self.solve_greedy).pack(
+            side="left", padx=3)
+        self.make_button(buttons_frame3, "Reset", "purple", "#dda0dd", "#ba55d3", self.start_game).pack(side="left",
+                                                                                                        padx=3)
+
+        # Hàng 4: Menu và Xem lịch sử
+        self.make_button(buttons_frame4, "Menu", "brown", "#f5deb3", "#e6c68a", self.show_start).pack(side="left",
+                                                                                                      padx=3)
+        self.make_button(buttons_frame4, "📜 Lịch sử", "white", "#4CAF50", "#45a049", self.show_history_in_game).pack(
+            side="left", padx=3)
 
         self.load_images()
         self.draw()
         self.update_timer()
+
+    def show_history_in_game(self):
+        """Hiển thị lịch sử dưới dạng cửa sổ popup nhỏ gọn trong game"""
+
+        # Kiểm tra nếu chưa có level_num (đang ở menu)
+        if not hasattr(self, 'level_num'):
+            # Nếu chưa có level, hiển thị thông báo và gọi show_history tổng quát
+            messagebox.showinfo("Thông báo", "Vui lòng chọn level trước khi xem lịch sử!")
+            self.show_history()  # Gọi lịch sử tổng quát
+            return
+
+        # Tạo cửa sổ popup
+        history_window = tk.Toplevel(self.root)
+        history_window.title(f"Lịch sử AI - Level {self.level_num}")
+        history_window.geometry("500x450")
+        history_window.configure(bg="#f0f0f0")
+        history_window.transient(self.root)  # Đặt làm con của cửa sổ chính
+        history_window.grab_set()  # Modal
+
+        # Center window
+        history_window.update_idletasks()
+        x = (history_window.winfo_screenwidth() // 2) - (500 // 2)
+        y = (history_window.winfo_screenheight() // 2) - (450 // 2)
+        history_window.geometry(f"500x450+{x}+{y}")
+
+        # Frame chính
+        main_frame = tk.Frame(history_window, bg="#f0f0f0")
+        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Tiêu đề
+        level_data = levels[self.level_num]
+        title_text = f"📊 LỊCH SỬ AI - {level_data['name']}"
+        tk.Label(main_frame, text=title_text, font=("Arial", 14, "bold"),
+                 bg="#f0f0f0", fg="#333").pack(pady=10)
+
+        # Frame hiển thị lịch sử
+        history_frame = tk.Frame(main_frame, bg="white", relief="solid", bd=1)
+        history_frame.pack(fill="both", expand=True, pady=10)
+
+        # Text widget hiển thị lịch sử
+        history_text = tk.Text(history_frame, height=18, width=55,
+                               bg="white", fg="#333", font=("Courier", 9),
+                               wrap="word", state="disabled")
+        history_text.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+
+        # Scrollbar
+        scrollbar = tk.Scrollbar(history_frame, command=history_text.yview)
+        scrollbar.pack(side="right", fill="y")
+        history_text.config(yscrollcommand=scrollbar.set)
+
+        # Cấu hình tag màu sắc
+        history_text.tag_config("header", font=("Courier", 10, "bold"), foreground="#2c3e50")
+        history_text.tag_config("separator", foreground="#7f8c8d")
+        history_text.tag_config("bfs", foreground="#2980b9")
+        history_text.tag_config("dfs", foreground="#c0392b")
+        history_text.tag_config("ucs", foreground="#27ae60")
+        history_text.tag_config("greedy", foreground="#f39c12")
+        history_text.tag_config("astar", foreground="#8e44ad")
+        history_text.tag_config("stats", foreground="#16a085")
+        history_text.tag_config("info", foreground="#95a5a6")
+
+        # Lấy dữ liệu lịch sử cho level hiện tại
+        history = self.history_manager.get_history(level=self.level_num)
+
+        # Cập nhật nội dung
+        history_text.config(state="normal")
+        history_text.delete(1.0, tk.END)
+
+        if not history:
+            history_text.insert(tk.END, "🤖 Chưa có lịch sử chạy AI cho level này\n\n", "header")
+            history_text.insert(tk.END, "Hãy thử chạy một thuật toán:\n", "info")
+            history_text.insert(tk.END, "• BFS - Tìm đường ngắn nhất\n", "info")
+            history_text.insert(tk.END, "• DFS - Tìm kiếm chiều sâu\n", "info")
+            history_text.insert(tk.END, "• UCS - Tối ưu chi phí\n", "info")
+            history_text.insert(tk.END, "• Greedy - Heuristic thuần\n", "info")
+            history_text.insert(tk.END, "• A* - Kết hợp g + h\n", "info")
+        else:
+            # Header
+            history_text.insert(tk.END, "═" * 50 + "\n", "separator")
+            history_text.insert(tk.END, f"{'THỜI GIAN':<20} {'THUẬT TOÁN':<12} {'SỐ NODE':<10} {'THỜI GIAN':<10}\n",
+                                "header")
+            history_text.insert(tk.END, "─" * 50 + "\n", "separator")
+
+            # Hiển thị các bản ghi (mới nhất ở trên)
+            for record in reversed(history[-15:]):  # Hiển thị 15 bản ghi gần nhất
+                timestamp = record["timestamp"][5:16]  # Lấy MM-DD HH:MM
+                algo = record["algorithm"]
+                nodes = record["states_explored"]
+                time_str = f"{record['execution_time']:.3f}s"
+
+                # Chọn màu theo thuật toán
+                tag = algo.lower()
+                if tag == "bfs":
+                    tag = "bfs"
+                elif tag == "dfs":
+                    tag = "dfs"
+                elif tag == "ucs":
+                    tag = "ucs"
+                elif tag == "greedy":
+                    tag = "greedy"
+                elif tag == "a*":
+                    tag = "astar"
+
+                line = f"{timestamp:<20} {algo:<12} {nodes:<10} {time_str:<10}\n"
+                history_text.insert(tk.END, line, tag)
+
+            history_text.insert(tk.END, "═" * 50 + "\n", "separator")
+
+            # Thống kê
+            stats = self.history_manager.get_statistics(level=self.level_num)
+            if stats:
+                history_text.insert(tk.END, "\n📈 THỐNG KÊ HIỆU SUẤT:\n", "stats")
+                for algo, data in stats.items():
+                    tag = algo.lower()
+                    line = f"  {algo:<8}: {data['count']} lần | "
+                    line += f"TB {data['avg_time']:.3f}s | "
+                    line += f"Min {data['min_time']:.3f}s | "
+                    line += f"Max {data['max_time']:.3f}s\n"
+                    history_text.insert(tk.END, line, tag if tag in ["bfs", "dfs", "ucs", "greedy", "astar"] else None)
+
+        history_text.config(state="disabled")
+
+        # Frame nút điều khiển
+        btn_frame = tk.Frame(main_frame, bg="#f0f0f0")
+        btn_frame.pack(fill="x", pady=10)
+
+        def refresh_history():
+            """Làm mới hiển thị lịch sử"""
+            history_text.config(state="normal")
+            history_text.delete(1.0, tk.END)
+
+            new_history = self.history_manager.get_history(level=self.level_num)
+
+            if not new_history:
+                history_text.insert(tk.END, "🤖 Chưa có lịch sử chạy AI cho level này\n\n", "header")
+                history_text.insert(tk.END, "Hãy thử chạy một thuật toán!\n", "info")
+            else:
+                history_text.insert(tk.END, "═" * 50 + "\n", "separator")
+                history_text.insert(tk.END, f"{'THỜI GIAN':<20} {'THUẬT TOÁN':<12} {'SỐ NODE':<10} {'THỜI GIAN':<10}\n",
+                                    "header")
+                history_text.insert(tk.END, "─" * 50 + "\n", "separator")
+
+                for record in reversed(new_history[-15:]):
+                    timestamp = record["timestamp"][5:16]
+                    algo = record["algorithm"]
+                    nodes = record["states_explored"]
+                    time_str = f"{record['execution_time']:.3f}s"
+
+                    tag = algo.lower()
+                    if tag == "bfs":
+                        tag = "bfs"
+                    elif tag == "dfs":
+                        tag = "dfs"
+                    elif tag == "ucs":
+                        tag = "ucs"
+                    elif tag == "greedy":
+                        tag = "greedy"
+                    elif tag == "a*":
+                        tag = "astar"
+
+                    line = f"{timestamp:<20} {algo:<12} {nodes:<10} {time_str:<10}\n"
+                    history_text.insert(tk.END, line, tag)
+
+                history_text.insert(tk.END, "═" * 50 + "\n", "separator")
+
+                stats = self.history_manager.get_statistics(level=self.level_num)
+                if stats:
+                    history_text.insert(tk.END, "\n📈 THỐNG KÊ HIỆU SUẤT:\n", "stats")
+                    for algo, data in stats.items():
+                        tag = algo.lower()
+                        line = f"  {algo:<8}: {data['count']} lần | "
+                        line += f"TB {data['avg_time']:.3f}s | "
+                        line += f"Min {data['min_time']:.3f}s | "
+                        line += f"Max {data['max_time']:.3f}s\n"
+                        history_text.insert(tk.END, line,
+                                            tag if tag in ["bfs", "dfs", "ucs", "greedy", "astar"] else None)
+
+            history_text.config(state="disabled")
+
+        # Nút làm mới
+        tk.Button(btn_frame, text="🔄 Làm mới", command=refresh_history,
+                  bg="#3498db", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        # Nút xóa lịch sử level này
+        def clear_level_history():
+            if messagebox.askyesno("Xác nhận", f"Xóa lịch sử cho Level {self.level_num}?"):
+                # Lưu lại lịch sử của các level khác
+                other_history = [r for r in self.history_manager.history if r["level"] != self.level_num]
+                self.history_manager.history = other_history
+                self.history_manager.save_history()
+                refresh_history()
+                messagebox.showinfo("Thành công", f"Đã xóa lịch sử Level {self.level_num}!")
+
+        tk.Button(btn_frame, text="🗑️ Xóa level này", command=clear_level_history,
+                  bg="#e74c3c", fg="white", padx=15, pady=5).pack(side="left", padx=5)
+
+        # Nút đóng
+        tk.Button(btn_frame, text="❌ Đóng", command=history_window.destroy,
+                  bg="#95a5a6", fg="white", padx=15, pady=5).pack(side="right", padx=5)
+
+        # Nút xuất CSV cho level này
+        def export_level_csv():
+            import csv
+            from datetime import datetime
+
+            filename = f"level{self.level_num}_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+
+            try:
+                with open(filename, 'w', newline='', encoding='utf-8') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(["ID", "Thời gian", "Level", "Tên Level", "Thuật toán",
+                                     "Thời gian chạy (s)", "Số trạng thái", "Số bước", "Chi phí"])
+
+                    for record in self.history_manager.get_history(level=self.level_num):
+                        writer.writerow([
+                            record["id"], record["timestamp"], record["level"],
+                            record["level_name"], record["algorithm"], record["execution_time"],
+                            record["states_explored"],
+                            record["solution_length"] if record["solution_length"] else "",
+                            record["cost"] if record["cost"] else ""
+                        ])
+
+                messagebox.showinfo("Thành công", f"Đã xuất lịch sử Level {self.level_num} ra file:\n{filename}")
+            except Exception as e:
+                messagebox.showerror("Lỗi", f"Không thể xuất file: {e}")
+
+        tk.Button(btn_frame, text="📋 Xuất CSV", command=export_level_csv,
+                  bg="#2ecc71", fg="white", padx=15, pady=5).pack(side="left", padx=5)
 
     def get_display_name(self, char_name):
         level_data = levels[self.level_num]
@@ -590,8 +1268,29 @@ Dũng cảm (person1, person2):
 
     def run_solve(self, algo_func, name):
         try:
-            sol, t, nodes = algo_func(self.state)
+            # Gọi thuật toán (trả về 5 giá trị)
+            result = algo_func(self.state)
+
+            if len(result) == 5:
+                sol, t, nodes, sol_length, cost = result
+            else:
+                # Fallback cho các hàm cũ
+                sol, t, nodes = result
+                sol_length = len(sol) - 1 if sol else None
+                cost = sol[-1].cost if sol else None
+
             if sol:
+                # Lưu vào lịch sử
+                self.history_manager.add_record(
+                    level=self.level_num,
+                    algorithm=name,
+                    exec_time=t,
+                    states_explored=nodes,
+                    solution_length=sol_length,
+                    cost=cost
+                )
+
+
                 self.show_ai_result(name, t, nodes)
                 self.animate_solution(sol)
             else:
