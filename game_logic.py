@@ -230,19 +230,42 @@ class GameState:
                     if new_state:
                         all_moves.append(new_state)
         else:
-            for r in range(1, self.boat_capacity + 1):
-                for combo in combinations(same_side, r):
-                    driver_found = False
-                    if "person" in self.characters and 0 in combo:
-                        driver_found = True
-                    elif "scientist" in self.characters and self.characters.index("scientist") in combo:
-                        driver_found = True
+            # Tìm tất cả người có thể lái thuyền
+            driver_indices = []
+            if "person" in self.characters:
+                driver_indices.append(self.characters.index("person"))
+            if "scientist" in self.characters:
+                driver_indices.append(self.characters.index("scientist"))
 
-                    if not driver_found:
+            # Nếu không có người lái, cho phép bất kỳ ai
+            if not driver_indices:
+                for r in range(1, self.boat_capacity + 1):
+                    for combo in combinations(same_side, r):
+                        new_state = self.move(combo)
+                        if new_state:
+                            all_moves.append(new_state)
+            else:
+                # Xác định số lượng vật tối đa được chở
+                max_items = self.boat_capacity - 1
+
+                # Level 4 chỉ cho chở tối đa 1 vật
+                if self.level == 4:
+                    max_items = 1
+
+                # Với mỗi người lái có thể
+                for driver_idx in driver_indices:
+                    # Kiểm tra người lái có ở cùng bờ
+                    if self.state[driver_idx] != self.boat_side:
                         continue
 
-                    new_state = self.move(combo)
-                    if new_state:
-                        all_moves.append(new_state)
+                    other_indices = [i for i in same_side if i != driver_idx]
+
+                    # Tạo các tổ hợp: người lái + 0 đến max_items vật
+                    for r in range(0, max_items + 1):
+                        for combo in combinations(other_indices, r):
+                            move_indices = [driver_idx] + list(combo)
+                            new_state = self.move(move_indices)
+                            if new_state:
+                                all_moves.append(new_state)
 
         return all_moves

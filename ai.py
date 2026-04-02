@@ -9,9 +9,9 @@ def generate_moves(state):
     moves = []
     characters = state.characters
 
+    # Level 6 xử lý đặc biệt
     if state.level == 6:
         same_side = [i for i, v in enumerate(state.state) if v == state.boat_side]
-
         for r in range(1, state.boat_capacity + 1):
             for combo in combinations(same_side, r):
                 new_state = state.move(combo)
@@ -19,31 +19,51 @@ def generate_moves(state):
                     moves.append(new_state)
         return moves
 
-    driver_idx = None
+    # Tìm tất cả người có thể lái thuyền
+    driver_indices = []
     if "person" in characters:
-        driver_idx = characters.index("person")
-    elif "scientist" in characters:
-        driver_idx = characters.index("scientist")
+        driver_indices.append(characters.index("person"))
+    if "scientist" in characters:
+        driver_indices.append(characters.index("scientist"))
 
-    if driver_idx is None:
-        return moves
-
-    other_indices = [i for i in range(len(characters)) if i != driver_idx]
-
-    for r in range(0, state.boat_capacity):
-        for combo in combinations(other_indices, r):
-            move_indices = [driver_idx] + list(combo)
-
-            valid = True
-            for idx in move_indices:
-                if state.state[idx] != state.boat_side:
-                    valid = False
-                    break
-
-            if valid:
-                new_state = state.move(move_indices)
+    # Nếu không có người lái, cho phép bất kỳ ai lên thuyền
+    if not driver_indices:
+        same_side = [i for i, v in enumerate(state.state) if v == state.boat_side]
+        for r in range(1, state.boat_capacity + 1):
+            for combo in combinations(same_side, r):
+                new_state = state.move(combo)
                 if new_state:
                     moves.append(new_state)
+        return moves
+
+    # Xác định số lượng vật tối đa được chở
+    max_items = state.boat_capacity - 1
+
+    # Level 4 chỉ cho chở tối đa 1 vật
+    if state.level == 4:
+        max_items = 1
+
+    # Với mỗi người lái có thể
+    for driver_idx in driver_indices:
+        # Kiểm tra người lái có ở cùng bờ không
+        if state.state[driver_idx] != state.boat_side:
+            continue
+
+        # Các nhân vật khác (không phải người lái hiện tại)
+        other_indices = [i for i in range(len(characters)) if i != driver_idx]
+
+        # Tạo các tổ hợp: người lái + 0 đến max_items vật
+        for r in range(0, max_items + 1):
+            for combo in combinations(other_indices, r):
+                move_indices = [driver_idx] + list(combo)
+
+                # Kiểm tra tất cả đều ở cùng bờ với thuyền
+                valid = all(state.state[idx] == state.boat_side for idx in move_indices)
+
+                if valid:
+                    new_state = state.move(move_indices)
+                    if new_state:
+                        moves.append(new_state)
 
     return moves
 
@@ -88,7 +108,7 @@ def heuristic(state):
 
 
 def bfs(start):
-    start_time = time.time()
+    start_time = time.perf_counter()  # Dùng perf_counter thay vì time.time()
     queue = deque([(start, [])])
     visited = set()
     states_explored = 0
@@ -104,18 +124,18 @@ def bfs(start):
 
         if state.is_goal():
             solution_path = path + [state]
-            exec_time = time.time() - start_time
-            solution_length = len(solution_path) - 1  # Số bước
-            cost = state.cost  # Chi phí
+            exec_time = time.perf_counter() - start_time
+            solution_length = len(solution_path) - 1
+            cost = state.cost
             return solution_path, exec_time, states_explored, solution_length, cost
 
         for next_state in generate_moves(state):
             queue.append((next_state, path + [state]))
-    return None, time.time() - start_time, states_explored, None, None
+    return None, time.perf_counter() - start_time, states_explored, None, None
 
 
 def dfs(start):
-    start_time = time.time()
+    start_time = time.perf_counter()  # Dùng perf_counter thay vì time.time()
     stack = [(start, [])]
     visited = set()
     states_explored = 0
@@ -131,18 +151,18 @@ def dfs(start):
 
         if state.is_goal():
             solution_path = path + [state]
-            exec_time = time.time() - start_time
+            exec_time = time.perf_counter() - start_time
             solution_length = len(solution_path) - 1
             cost = state.cost
             return solution_path, exec_time, states_explored, solution_length, cost
 
         for next_state in generate_moves(state):
             stack.append((next_state, path + [state]))
-    return None, time.time() - start_time, states_explored, None, None
+    return None, time.perf_counter() - start_time, states_explored, None, None
 
 
 def ucs(start):
-    start_time = time.time()
+    start_time = time.perf_counter()  # Dùng perf_counter thay vì time.time()
     count = 0
     pq = [(0, count, start, [])]
     visited = {}
@@ -160,7 +180,7 @@ def ucs(start):
 
         if state.is_goal():
             solution_path = path + [state]
-            exec_time = time.time() - start_time
+            exec_time = time.perf_counter() - start_time
             solution_length = len(solution_path) - 1
             return solution_path, exec_time, states_explored, solution_length, state.cost
 
@@ -169,11 +189,11 @@ def ucs(start):
             count += 1
             heapq.heappush(pq, (new_cost, count, next_state, path + [state]))
 
-    return None, time.time() - start_time, states_explored, None, None
+    return None, time.perf_counter() - start_time, states_explored, None, None
 
 
 def greedy(start):
-    start_time = time.time()
+    start_time = time.perf_counter()  # Dùng perf_counter thay vì time.time()
     count = 0
     pq = [(heuristic(start), count, start, [])]
     visited = set()
@@ -190,7 +210,7 @@ def greedy(start):
 
         if state.is_goal():
             solution_path = path + [state]
-            exec_time = time.time() - start_time
+            exec_time = time.perf_counter() - start_time
             solution_length = len(solution_path) - 1
             cost = state.cost
             return solution_path, exec_time, states_explored, solution_length, cost
@@ -199,11 +219,11 @@ def greedy(start):
             count += 1
             heapq.heappush(pq, (heuristic(next_state), count, next_state, path + [state]))
 
-    return None, time.time() - start_time, states_explored, None, None
+    return None, time.perf_counter() - start_time, states_explored, None, None
 
 
 def astar(start):
-    start_time = time.time()
+    start_time = time.perf_counter()  # Dùng perf_counter thay vì time.time()
     count = 0
     pq = [(heuristic(start), count, start, [])]
     visited = {}
@@ -221,7 +241,7 @@ def astar(start):
 
         if state.is_goal():
             solution_path = path + [state]
-            exec_time = time.time() - start_time
+            exec_time = time.perf_counter() - start_time
             solution_length = len(solution_path) - 1
             return solution_path, exec_time, states_explored, solution_length, state.cost
 
@@ -233,7 +253,7 @@ def astar(start):
             count += 1
             heapq.heappush(pq, (f_new, count, next_state, path + [state]))
 
-    return None, time.time() - start_time, states_explored, None, None
+    return None, time.perf_counter() - start_time, states_explored, None, None
 
 
 def hint(state):

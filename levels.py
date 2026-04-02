@@ -34,7 +34,7 @@ levels = {
         "name": "Những chiếc thùng",
         "description": "Thùng nhỏ không được ở với thùng vừa/lớn nếu không có người.",
         "characters": ["person", "box_small", "box_medium", "box_large"],
-        "boat_capacity": 3,
+        "boat_capacity": 2,
         "weights": {
             "box_small": 30,
             "box_medium": 60,
@@ -128,7 +128,7 @@ levels = {
     }
 },
    9: {
-    "name": "Robot và Bom (Nhẹ nhàng)",
+    "name": "Robot và Bom",
     "description": "Đưa tất cả nhân vật qua sông. Robot không được đi một mình, Bom đi tự do.",
 
     "characters": [
